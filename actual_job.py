@@ -74,14 +74,14 @@ measurements = generate_measurements(plane_coord[0],np.transpose(x_p),np.transpo
 X,Y,Z = zip(origin[0],origin[0],origin[0],plane_coord[0],plane_coord[0],plane_coord[0])
 U,V,W = zip(x_ori[0],y_ori[0],z_ori[0],np.transpose(x_p)[0],np.transpose(y_p)[0],np.transpose(z_p)[0])
 
-theta_noise = theta+np.random.rand()*0.1
-phi_noise = phi+np.random.rand()*0.1
+
 P_0 = np.diag(np.array([sigma_r,sigma_r,sigma_r,sigma_r,sigma_r])**2)
 Q = P_0
-
 # H = np.dot(np.array([[0,1,0]]),np.transpose(C_WT)) # shape(1,3)
 # initial state
 r_km1 = plane_coord + np.random.rand(1,3) # shape(1,3)
+theta_noise = theta+np.random.rand()*0.1
+phi_noise = phi+np.random.rand()*0.1
 x_km1 = np.array([np.append(r_km1,[theta_noise,phi_noise])])
 # initial covariance matrix
 P_km1 = P_0
@@ -147,11 +147,13 @@ def animate(i):
     # print("p shape is ", P_k_km1.shape)
     # measurement
     # print(r_km1)
-    C_WT = plane_rotation_matrix(x_k_km1[0][3],x_k_km1[0][4]) 
+    theta = x_k_km1[0][3]
+    phi = x_k_km1[0][4]
+    C_WT = plane_rotation_matrix(theta,phi) 
     x_p_est,y_p_est,z_p_est = plane_frame(C_WT,w_x,w_y,w_z)
-    H = np.array([[-np.cos(x_k_km1[0][3])*np.sin(x_k_km1[0][4]), np.cos(x_k_km1[0][3])*np.cos(x_k_km1[0][4]),np.sin(x_k_km1[0][3]),
-    np.sin(x_k_km1[0][3])*np.sin(x_k_km1[0][4])*(x_k_km1[0][1]-measurements[i][1])-np.sin(x_k_km1[0][3])*np.cos(x_k_km1[0][4])*(x_k_km1[0][2]-measurements[i][2])+np.cos(x_k_km1[0][3])*(x_k_km1[0][2]-measurements[i][2]),
-    -np.cos(x_k_km1[0][4])*np.cos(x_k_km1[0][3])*(x_k_km1[0][0]-measurements[i][0])-np.cos(x_k_km1[0][3])*np.sin(x_k_km1[0][4])*(x_k_km1[0][1]-measurements[i][1])+np.sin(x_k_km1[0][3])*np.sin(x_k_km1[0][4])]])
+    H = np.array([[-np.cos(theta)*np.sin(phi), np.cos(theta)*np.cos(phi),np.sin(theta),
+    np.sin(phi)*np.sin(theta)*(x_k_km1[0][0]-measurements[i][0])-np.sin(theta)*np.cos(phi)*(x_k_km1[0][1]-measurements[i][1])+np.cos(theta)*(x_k_km1[0][2]-measurements[i][2]),
+    -np.cos(theta)*np.cos(phi)*(x_k_km1[0][0]-measurements[i][0])-np.cos(theta)*np.sin(phi)*(x_k_km1[0][1]-measurements[i][1])+np.sin(x_k_km1[0][3])*np.sin(x_k_km1[0][4])]])
     y = np.dot(np.dot(np.array([[0,1,0]]),np.transpose(C_WT)),(np.transpose(np.array([measurements[i]-x_k_km1[0][:3]])))) 
     # print(abs(y))
     # print(measurements[i])
