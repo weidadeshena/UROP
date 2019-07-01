@@ -13,6 +13,8 @@ sigma = 0.5
 phi = (np.random.rand()-0.5)*2*np.pi
 theta = (np.random.rand()-0.5)*np.pi/8
 number_of_measurements = 200
+a = np.linspace(0,5,number_of_measurements)
+b = np.random.normal(1,0.2,number_of_measurements)
 
 def plane_rotation_matrix(phi,theta):
     R_z = np.array([[np.cos(phi),-np.sin(phi),0],[np.sin(phi),np.cos(phi),0],[0,0,1]])
@@ -59,6 +61,14 @@ def generate_measurements(ray_origin,x_ray,z_ray):
         measurements = np.vstack((measurements,point_true[0]))
     return measurements
     
+def measurements_from_motion(ray_origin,x_ray,z_ray):
+    measurements = np.array([ray_origin])
+    for i in range(number_of_measurements):
+        point_true = ray_origin + a[i]*x_ray + b[i]*z_ray
+        point_noise = point_true + np.random.normal(0,sigma,size=(1,3))
+        measurements = np.vstack((measurements,point_true[0]))
+    return measurements
+
 
 w_x = np.transpose(x_ori)
 w_y = np.transpose(y_ori)
@@ -68,102 +78,83 @@ C_WT = plane_rotation_matrix(phi,theta)
 x_p,y_p,z_p = plane_frame(C_WT,w_x,w_y,w_z)
 plane_coord = random_position() # shape(1,3)
 
-measurements = generate_measurements(plane_coord[0],np.transpose(x_p),np.transpose(z_p))
+measurements = measurements_from_motion(plane_coord[0],np.transpose(x_p),np.transpose(z_p))
 
 
 X,Y,Z = zip(origin[0],origin[0],origin[0],plane_coord[0],plane_coord[0],plane_coord[0])
 U,V,W = zip(x_ori[0],y_ori[0],z_ori[0],np.transpose(x_p)[0],np.transpose(y_p)[0],np.transpose(z_p)[0])
 
 
-P_0 = np.diag(np.array([sigma_r,sigma_r,sigma_r,sigma_r,sigma_r])**2)
-Q = P_0
-# H = np.dot(np.array([[0,1,0]]),np.transpose(C_WT)) # shape(1,3)
+Pr_0 = np.diag(np.array([sigma_r,sigma_r,sigma_r,sigma_r,sigma_r])**2)
+Q = Pr_0
+H = np.dot(np.array([[0,1,0]]),np.transpose(C_WT)) # shape(1,3)
 # initial state
-R = sigma**2*(C_WT[0][1]**2+C_WT[1][1]**2+C_WT[2][1]**2)
+
 r_km1 = plane_coord + np.random.rand(1,3) # shape(1,3)
-theta_noise = theta+np.random.rand()*0.1
-phi_noise = phi+np.random.rand()*0.1
+theta_noise = theta+np.random.rand()*0.05
+phi_noise = phi+np.random.rand()*0.05
 x_km1 = np.array([np.append(r_km1,[theta_noise,phi_noise])])
 # initial covariance matrix
-P_km1 = P_0
+P_km1 = Pr_0
 # print(C_WT)
 
+angle_km1 = np.array([[theta_noise,phi_noise]])
+Pa_0 = np.diag(np.array([sigma_r,sigma_r])**2)
+Qa = Pa_0
+Pa_km1 = Pa_0
 
 
+# def animate(i):
+#     global angle_km1,Pa_km1,poses,points
+#     angle_k_km1 = angle_km1
+#     Pa_k_km1 = Pa_km1 + Qa
+#     C_WT = plane_rotation_matrix(angle_km1[0][0],angle_km1[0][1])
+#     x_p_est,y_p_est,z_p_est = plane_frame(C_WT,w_x,w_y,w_z)
+#     H = np.array([[np.sin(phi)*np.sin(theta)*plane_coord[0][0]-np.sin(theta)*np.cos(phi)*plane_coord[0][1]+np.cos(theta)*plane_coord[0][2],
+#     -np.cos(theta)*np.cos(phi)*plane_coord[0][0]-np.cos(theta)*np.sin(phi)*plane_coord[0][1]]])
+#     y = np.dot(np.array([[0,1,0]]),np.dot(np.transpose(C_WT),np.transpose(np.array([measurements[i]-plane_coord[0]]))))
+#     print(y)
+#     R = sigma**2*(C_WT[0][1]**2+C_WT[1][1]**2+C_WT[2][1]**2)
+#     S = np.dot(H,Pa_k_km1).dot(np.transpose(H)) + R #(1,1)
+#     K = np.dot(Pa_k_km1,np.transpose(H))/S
+#     angle_km1 = angle_k_km1 + np.transpose(np.dot(K,y))
+#     Pa_km1 = np.dot((np.identity(2)-np.dot(K,H)),Pa_k_km1)
+#     X,Y,Z = zip(origin[0],origin[0],origin[0],plane_coord[0],plane_coord[0],plane_coord[0],plane_coord[0],plane_coord[0],plane_coord[0])
+#     U,V,W = zip(x_ori[0],y_ori[0],z_ori[0],np.transpose(x_p_est)[0],np.transpose(y_p_est)[0],np.transpose(z_p_est)[0],np.transpose(x_p)[0],np.transpose(y_p)[0],np.transpose(z_p)[0])
+#     poses.remove()
+#     poses = ax.quiver(X,Y,Z,U,V,W,length=1.,normalize=True,color='rgbrgb')
+#     # points.remove()
+#     points = ax.scatter(measurements[i][0],measurements[i][1],measurements[i][2],s=1)
 
 
-
-
-# fig = plt.figure()
-# ax = fig.gca(projection='3d')
-# ax.set_xlim([0,12])
-# ax.set_ylim([0,12])
-# ax.set_zlim([0,12])
-# ax.quiver(X,Y,Z,U,V,W,length=1,normalize=True,color='rgbrgb')
-# measurements_ = np.transpose(measurements)
-# ax.scatter(measurements_[0],measurements_[1],measurements_[2],s=5)
-
-# print(r_km1)
-# # measurements[i] shape (1,3)
-# for i in range(measurements.shape[0]):
-#     # prediction
-#     r_k_km1 = r_km1 + np.random.normal(0,sigma_r,size=(1,3))
-#     P_k_km1 = P_km1 + Q
-#     # print("P_k_km1 is ", P_k_km1)
-#     # print("p shape is ", P_k_km1.shape)
-#     # measurement
-#     y = np.dot(H,(np.transpose(np.array([measurements[i]])-r_k_km1))) #(1,1)
-#     # print("y is ",y)
-#     # print("measurement is ",measurements[i])
-#     # print("r_km1 is ", r_km1)
-#     # print(H)
-#     # print("y shape is ",y.shape)
-#     S = np.dot(H,P_k_km1).dot(np.transpose(H)) + R #(1,1)
-#     # print("S is ",S)
-#     # print("s shape is ",S.shape)
-#     K = np.dot(P_k_km1,np.transpose(H))/S #(3,1)
-#     # print("K is ",K)
-#     # print("k shape is ",K.shape)
-#     # print("np.transpose(np.dot(K,y)) ", np.transpose(np.dot(K,y)))
-#     # print("r_k_km1 ", r_k_km1)
-#     r_k_k = r_k_km1 + np.transpose(np.dot(K,y)) #(1,3)
-#     # print("r_k_k ",r_k_k)
-#     P_k_k = np.dot((np.identity(3) - np.dot(K,H)),P_k_km1)
-#     r_km1 = r_k_k
-#     P_km1 = P_k_k
-#     # r_km1 = r_k_km1
-#     # P_km1 = P_k_km1
-#     print(r_km1)
-
-
-# print(plane_coord)
-
-# C_WT = C_z(phi)*C_x(theta)
 
 
 def animate(i):
-    global poses,points,r_km1,P_km1,x_p,y_p,z_p,x_ori,y_ori,z_ori,x_km1
+    global poses,points,r_km1,P_km1,x_km1
     x_k_km1 = x_km1
     P_k_km1 = P_km1 + Q
     # print("p shape is ", P_k_km1.shape)
-    theta = x_k_km1[0][3]
-    phi = x_k_km1[0][4]
-    # print(theta,phi)
-    C_WT = plane_rotation_matrix(theta,phi) 
+    theta_est = x_k_km1[0][3]
+    phi_est = x_k_km1[0][4]
+    C_WT = plane_rotation_matrix(theta_est,phi_est) 
     # print(C_WT)
     x_p_est,y_p_est,z_p_est = plane_frame(C_WT,w_x,w_y,w_z)
-    H = np.array([[-np.cos(theta)*np.sin(phi),np.cos(theta)*np.cos(phi),np.sin(theta),
-    np.sin(phi)*np.sin(theta)*x_k_km1[0][0]-np.sin(theta)*np.cos(phi)*x_k_km1[0][1]+np.cos(theta)*x_k_km1[0][2],
-    -np.cos(theta)*np.cos(phi)*x_k_km1[0][0]-np.cos(theta)*np.sin(phi)*x_k_km1[0][1]]])
-    y = np.dot(np.dot(np.array([[0,1,0]]),np.transpose(C_WT)),np.transpose(np.array([measurements[i]-x_k_km1[0][:3]]))) 
+    # print("y_p is ", y_p)
+    # print("y_p estimate is ", y_p_est)
+    H = np.array([[-np.cos(theta_est)*np.sin(phi_est),np.cos(theta_est)*np.cos(phi_est),np.sin(theta_est),
+    np.sin(phi_est)*np.sin(theta_est)*x_k_km1[0][0]-np.sin(theta_est)*np.cos(phi_est)*x_k_km1[0][1]+np.cos(theta_est)*x_k_km1[0][2],
+    -np.cos(theta_est)*np.cos(phi_est)*x_k_km1[0][0]-np.cos(theta_est)*np.sin(phi_est)*x_k_km1[0][1]]])
+    y = np.dot(np.array([[0,1,0]]),np.dot(np.transpose(C_WT),np.transpose(np.array([measurements[i]-x_k_km1[0][:3]]))))
+    # y = np.dot(np.array([[0,1,0]]),np.dot(np.transpose(C_WT),np.transpose(np.array([measurements[i]-r_km1[0]]))))
+    print(y) 
     # print(abs(y))
     # print(measurements[i])
     # print(H)
     # print("y shape is ",y.shape)
+    R = sigma_r
     S = np.dot(H,P_k_km1).dot(np.transpose(H)) + R #(1,1)
     # print("s shape is ",S.shape)
     K = np.dot(P_k_km1,np.transpose(H))/S #(5,1)
-    print(K)
     # print(K)
     # print("k shape is ",K.shape)
     x_km1 = x_k_km1 + np.transpose(np.dot(K,y)) #(1,5)
