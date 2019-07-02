@@ -12,7 +12,7 @@ sigma_r = 0.01
 sigma = 0.5
 phi = (np.random.rand()-0.5)*2*np.pi
 theta = (np.random.rand()-0.5)*np.pi/8
-number_of_measurements = 200
+number_of_measurements = 500
 a = np.linspace(0,5,number_of_measurements)
 b = np.random.normal(1,0.2,number_of_measurements)
 
@@ -58,7 +58,7 @@ def generate_measurements(ray_origin,x_ray,z_ray):
     for i in range(number_of_measurements):
         point_true = ray_origin + 10*(np.random.rand()-0.5)*x_ray + 10*(np.random.rand()-0.5)*z_ray
         point_noise = point_true + np.random.normal(0,sigma,size=(1,3))
-        measurements = np.vstack((measurements,point_true[0]))
+        measurements = np.vstack((measurements,point_noise[0]))
     return measurements
     
 def measurements_from_motion(ray_origin,x_ray,z_ray):
@@ -151,10 +151,10 @@ def animate(i):
     # print(measurements[i])
     # print(H)
     # print("y shape is ",y.shape)
-    R = sigma_r
-    S = np.dot(H,P_k_km1).dot(np.transpose(H)) + R #(1,1)
+    R = sigma**2*(C_WT[0][1]+C_WT[1][1]+C_WT[2][1])
+    S = np.dot(np.dot(H,P_k_km1),np.transpose(H)) + R #(1,1)
     # print("s shape is ",S.shape)
-    K = np.dot(P_k_km1,np.transpose(H))/S #(5,1)
+    K = np.dot(P_k_km1,np.transpose(H))/S[0][0] #(5,1)
     # print(K)
     # print("k shape is ",K.shape)
     x_km1 = x_k_km1 + np.transpose(np.dot(K,y)) #(1,5)
