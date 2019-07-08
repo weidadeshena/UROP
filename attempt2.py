@@ -25,19 +25,19 @@ def board_rotation(phi,psi):
 	return np.dot(C_z,C_x)
 
 # ground truth
-x_ori = np.array([[1,0,0]])
-y_ori = np.array([[0,1,0]])
-z_ori = np.array([[0,0,1]])
+x_axis = np.array([[1],[0],[0]])
+y_axis = np.array([[0],[1],[0]])
+z_axis = np.array([[0],[0],[1]])
 origin = np.array([[0,0,0]])
 w_r_x = np.random.rand()*10
 w_r_y = np.random.rand()*10
 w_r_z = np.random.rand()*10
 w_r_true = np.array([[w_r_x,w_r_y,w_r_z]])
-phi_true = np.random.uniform(-np.pi,np.pi) 
-psi_true = np.random.uniform(-0.1,0.1)
+phi_true = np.random.uniform(-0.1,0.1)
+psi_true = np.random.uniform(-np.pi,np.pi) 
 x_true = np.array([[w_r_x,w_r_y,w_r_z,phi_true,psi_true]])
 C_WT_true = board_rotation(phi_true,psi_true)
-x_p_true,y_p_true,z_p_true = plane_frame(C_WT_true,np.transpose(x_ori),np.transpose(y_ori),np.transpose(z_ori))
+x_p_true,y_p_true,z_p_true = plane_frame(C_WT_true,x_axis,y_axis,z_axis)
 
 # initial state and covariance
 P = np.diag(np.array([0.1,0.1,0.1,0.1,0.1]))
@@ -57,11 +57,13 @@ def animate(i):
 	psi_est = x[4][0]
 	C_WT = board_rotation(phi_est,psi_est)
 	delta_r = r_tilde_w - x[0:3,:]
-	print(delta_r)
+	# print(delta_r)
 	H_phi = delta_r[2][0]*np.cos(phi_est)-delta_r[1][0]*np.cos(psi_est)*np.sin(phi_est)+delta_r[0][0]*np.sin(phi_est)*np.sin(psi_est)
 	H_psi = -np.cos(phi_est)*(delta_r[0][0]*np.cos(psi_est)-delta_r[1][0]*np.sin(psi_est))
 	H_r = np.array([[0,1,0]]).dot(np.transpose(C_WT))
+	# print(H_phi,H_psi,H_r)
 	H = np.array([np.append(H_r[0],[H_phi,H_psi])])
+	# print(H)
 	y = np.array([[0,1,0]]).dot(np.dot(np.transpose(C_WT),delta_r))
 	S = np.dot(np.dot(H,P),np.transpose(H))+sigma_r**2*(C_WT[1][0]**2+C_WT[1][1]**2+C_WT[1][2]**2)
 	K = np.dot(P,np.transpose(H))/S
@@ -72,10 +74,10 @@ def animate(i):
 	x = x + delta_x
 	P = P - np.dot(np.dot(K,H),P)
 	w_r_p_est = np.transpose(x[0:3,:])
-	x_p_est,y_p_est,z_p_est = plane_frame(C_WT,np.transpose(x_ori),np.transpose(y_ori),np.transpose(z_ori))
+	x_p_est,y_p_est,z_p_est = plane_frame(C_WT,x_axis,y_axis,z_axis)
 	X,Y,Z = zip(origin[0],origin[0],origin[0],w_r_true[0],w_r_true[0],w_r_true[0],w_r_p_est[0],w_r_p_est[0],w_r_p_est[0])
-	U,V,W = zip(x_ori[0],y_ori[0],z_ori[0],np.transpose(x_p_true)[0],np.transpose(y_p_true)[0],np.transpose(z_p_true)[0],
-		np.transpose(x_p_est)[0],np.transpose(y_p_est)[0],np.transpose(z_p_est)[0])
+	U,V,W = zip(np.transpose(x_axis)[0],np.transpose(y_axis)[0],np.transpose(z_axis)[0],np.transpose(x_p_true)[0],
+		np.transpose(y_p_true)[0],np.transpose(z_p_true)[0],np.transpose(x_p_est)[0],np.transpose(y_p_est)[0],np.transpose(z_p_est)[0])
 	poses.remove()
 	poses = ax.quiver(X,Y,Z,U,V,W,length=1.,normalize=True,color='rgbrgb')
 
@@ -87,7 +89,8 @@ ax.set_xlim([0,10])
 ax.set_ylim([0,10])
 ax.set_zlim([0,10])
 X,Y,Z = zip(origin[0],origin[0],origin[0],w_r_true[0],w_r_true[0],w_r_true[0])
-U,V,W = zip(x_ori[0],y_ori[0],z_ori[0],np.transpose(x_p_true)[0],np.transpose(y_p_true)[0],np.transpose(z_p_true)[0])
+U,V,W = zip(np.transpose(x_axis)[0],np.transpose(y_axis)[0],np.transpose(z_axis)[0],np.transpose(x_p_true)[0],
+	np.transpose(y_p_true)[0],np.transpose(z_p_true)[0])
 poses = ax.quiver(X,Y,Z,U,V,W,length=1.,normalize=True,color='rgbrgb')
 ani = animation.FuncAnimation(fig, animate, frames=600,
                               interval=1, blit=False)
