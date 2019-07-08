@@ -20,8 +20,8 @@ a = np.linspace(0,5,number_of_measurements)
 b = np.random.normal(1,0.2,number_of_measurements)
 
 def plane_rotation_matrix(phi,psi):
-    R_z = np.array([[np.cos(psi),-np.sin(psi),0],[np.sin(psi),np.cos(psi),0],[0,0,1]])
-    R_x = np.array([[1,0,0],[0,np.cos(phi),-np.sin(phi)],[0,np.sin(phi),np.cos(phi)]])
+    R_z = np.array([[np.cos(psi),np.sin(psi),0],[-np.sin(psi),np.cos(psi),0],[0,0,1]])
+    R_x = np.array([[1,0,0],[0,np.cos(phi),np.sin(phi)],[0,-np.sin(phi),np.cos(phi)]])
     return np.dot(R_z,R_x)
 
 def random_position():
@@ -31,11 +31,11 @@ def random_position():
     coord = np.array([[x,y,z]])
     return coord
 
-def plane_frame(R,w_x,w_y,w_z):
-    R = np.transpose(R)
-    w_x_p = np.dot(R,w_x)
-    w_y_p = np.dot(R,w_y)
-    w_z_p = np.dot(R,w_z)
+def plane_frame(C_WT,w_x,w_y,w_z):
+    C_TW = np.transpose(C_WT)
+    w_x_p = np.dot(C_TW,w_x)
+    w_y_p = np.dot(C_TW,w_y)
+    w_z_p = np.dot(C_TW,w_z)
     w_x_p /= np.linalg.norm(w_x_p)
     w_y_p /= np.linalg.norm(w_y_p)
     w_z_p /= np.linalg.norm(w_z_p)
@@ -44,7 +44,7 @@ def plane_frame(R,w_x,w_y,w_z):
 def generate_measurements(ray_origin,x_ray,z_ray):
     measurements = np.array([ray_origin])
     for i in range(number_of_measurements):
-        point_true = ray_origin + 10*(np.random.rand()-0.5)*x_ray + 10*(np.random.rand()-0.5)*z_ray
+        point_true = ray_origin + 1*(np.random.rand()-0.5)*x_ray + 1*(np.random.rand()-0.5)*z_ray
         point_noise = point_true + np.random.normal(0,sigma_r,size=(1,3))
         measurements = np.vstack((measurements,point_noise[0]))
     return measurements
@@ -61,20 +61,18 @@ def measurements_from_motion(ray_origin,x_ray,z_ray):
 w_x = np.transpose(x_ori)
 w_y = np.transpose(y_ori)
 w_z = np.transpose(z_ori)
-
 C_WT = plane_rotation_matrix(phi,psi) 
 x_p,y_p,z_p = plane_frame(C_WT,w_x,w_y,w_z)
 plane_coord = random_position() # shape(1,3)
-
 measurements = generate_measurements(plane_coord[0],np.transpose(x_p),np.transpose(z_p))
 
 Pr_0 = np.diag(np.array([0.1,0.1,0.1,0.1,0.1]))
 Q = dt*np.diag(np.array([sigma_p_r,sigma_p_r,sigma_p_r,sigma_angle,sigma_angle])**2)
 # initial state
 
-r_km1 = plane_coord + np.random.rand(1,3)*0.5 # shape(1,3)
-phi_noise = phi+np.random.rand()*0.1
-psi_noise = psi+np.random.rand()*0.1
+r_km1 = plane_coord + np.random.normal(0,np.sqrt(0.1),size=(1,3)) # shape(1,3)
+phi_noise = phi+np.random.normal(0,np.sqrt(0.1))
+psi_noise = psi+np.random.normal(0,np.sqrt(0.1))
 x_km1 = np.array([np.append(r_km1,[phi_noise,psi_noise])])
 # initial covariance matrix
 P_km1 = Pr_0
@@ -120,6 +118,7 @@ def animate(i):
     H_psi = -np.cos(phi_est)*np.cos(psi_est)*delta_r[0]-np.cos(phi_est)*np.sin(psi_est)*delta_r[1]
     H_r = np.array([[0,1,0]]).dot(np.transpose(C_WT))
     H = np.array([np.append(H_r[0],[H_phi,H_psi])])
+
     R = sigma_r**2*(C_WT[0][1]**2+C_WT[1][1]**2+C_WT[2][1]**2)
     S = np.dot(np.dot(H,P_k_km1),np.transpose(H)) + R
     K = np.dot(P_k_km1,np.transpose(H))/S
