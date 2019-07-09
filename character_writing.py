@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-animate = False
+animate = True
 
 
-char = "A"
+char = "G"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 g = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -30,40 +30,45 @@ def change_order_append_to_list(outline,points,index,max_index):
 		while n < max_index:
 			outline.append(points[n])
 			n+=1
-	for i in range(index):
+	for i in range(index+1):
 		outline.append(points[i])
 	return outline
 
-a = [2,1,3,4]
-b = [5,1,4,2,3]
-path = change_order_append_to_list(a,b,b.index(a[-1]),len(b))
-print(path)
+# a = [(1,2),(2,3),(4,5)]
+# b = [(3,5),(4,5),(1,4),(3,6)]
+# k = change_order_append_to_list(a,b,b.index(a[-1]),len(b))
+# print(k)
 
 
-
-i = len(contours)
-print(i)
+n_contours = len(contours)
+print(n_contours)
 # outline=ttfquery.glyph.decomposeOutline(contours[1], steps=5)
 # for point in outline:
 # 	outline_x = np.append(outline_x, point[0])
 # 	outline_y = np.append(outline_y, point[1])
-print(contours)
+outline_list = []
 for contour in contours:
 	outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
 	# outline = sorted(set(outline),key=outline.index)
-	print(outline)
-	for point in outline:
-		outline_x = np.append(outline_x, point[0])
-		outline_y = np.append(outline_y, point[1])
-	# print(outline)
-	for point, flag in contour:
-    	# if flag == 1:
-		x = np.append(x,point[0])
-		y = np.append(y,point[1])
+	outline_list.append(outline)
+	# for point in outline:
+	# 	outline_x = np.append(outline_x, point[0])
+	# 	outline_y = np.append(outline_y, point[1])
 
-# print(x)
-# print(y)
-# print(i)
+	# for point, flag in contour:
+	# 	x = np.append(x,point[0])
+	# 	y = np.append(y,point[1])
+
+path = outline_list[0]
+for i in range(1,len(outline_list)):
+	path = change_order_append_to_list(path,outline_list[i],outline_list[i].index(path[-1]),len(outline_list[i]))
+# print(path)
+# path = sorted(set(path),key=path.index)
+for point in path:
+	outline_x = np.append(outline_x, point[0])
+	outline_y = np.append(outline_y, point[1])
+
+
 
 if animate:
 	fig = plt.figure()
@@ -83,9 +88,6 @@ if animate:
 
 	ani = FuncAnimation(fig, animate, frames=100, interval=200)
 else:
-	plt.subplot(1,2,1)
-	plt.plot(x,y,marker='x')
-	plt.subplot(1,2,2)
 	plt.plot(outline_x,outline_y,marker='x')
 	plt.gca().set_aspect('equal', adjustable='box')
 
