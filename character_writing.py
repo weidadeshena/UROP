@@ -64,8 +64,13 @@ elif n_contours > 1:
 			path.append(eval(p))
 			# print(list(G.adj[p]))
 			for i in range(G.number_of_edges()):
+				if char == "R" and p == str((163,352)):
+					G.add_edge(str((163,352)),str((0,352)))
+					print("added")
 				path,next_point = find_next_path(p,path)
 				p = next_point
+				# if char == "R" and next_point == '(163,352)':
+				# 	G.add_edge('(163,352)','(0,352)')
 			break
 	print(path)
 
