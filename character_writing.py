@@ -7,11 +7,12 @@ import ttfquery
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
+# import networkx as nx
 
 animate = True
 
 
-char = "G"
+char = "Q"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 g = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -22,7 +23,8 @@ outline_x = np.array([])
 outline_y = np.array([])
 
 
-def change_order_append_to_list(outline,points,index,max_index):
+def change_order_append_to_list(outline,points,index):
+	max_index = len(points)
 	if index == max_index:
 		pass
 	else:
@@ -32,7 +34,8 @@ def change_order_append_to_list(outline,points,index,max_index):
 			n+=1
 	for i in range(index+1):
 		outline.append(points[i])
-	return outline
+	path = outline
+	return path
 
 # a = [(1,2),(2,3),(4,5)]
 # b = [(3,5),(4,5),(1,4),(3,6)]
@@ -49,7 +52,7 @@ print(n_contours)
 outline_list = []
 for contour in contours:
 	outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
-	# outline = sorted(set(outline),key=outline.index)
+	outline = sorted(set(outline),key=outline.index)
 	outline_list.append(outline)
 	# for point in outline:
 	# 	outline_x = np.append(outline_x, point[0])
@@ -61,8 +64,20 @@ for contour in contours:
 
 path = outline_list[0]
 for i in range(1,len(outline_list)):
-	path = change_order_append_to_list(path,outline_list[i],outline_list[i].index(path[-1]),len(outline_list[i]))
-# print(path)
+	current_outline = outline_list[i]
+	if path[-1] in current_outline:
+		path = change_order_append_to_list(path,current_outline,current_outline.index(path[-1]))
+	else:
+		smallest = np.inf
+		for j in range(len(current_outline)):
+			difference = np.subtract(path[-1],current_outline[j])
+			dist = np.sum(np.absolute(difference))
+			if dist < smallest:
+				smallest = dist
+				min_index = j
+		path = change_order_append_to_list(path,current_outline,min_index)
+
+
 # path = sorted(set(path),key=path.index)
 for point in path:
 	outline_x = np.append(outline_x, point[0])
