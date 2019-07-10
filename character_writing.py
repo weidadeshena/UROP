@@ -69,10 +69,7 @@ elif n_contours > 1:
 					print("added")
 				path,next_point = find_next_path(p,path)
 				p = next_point
-				# if char == "R" and next_point == '(163,352)':
-				# 	G.add_edge('(163,352)','(0,352)')
 			break
-	print(path)
 
 for i in range(len(path)):
 	outline_x = np.append(outline_x,path[i][0])
