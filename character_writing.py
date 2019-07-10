@@ -13,7 +13,7 @@ animate = True
 graph = False
 
 
-char = "W"
+char = "R"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -30,33 +30,49 @@ def round_all(stuff):
         return tuple(round_all(x) for x in stuff)
     return round(float(stuff))
 
+def find_next_path(init_point,path):
+	print(init_point,list(G.adj[init_point]))
+	next_point = list(G.adj[init_point])[0]
+	path.append(eval(next_point))
+	G.remove_edge(init_point,next_point)
+	return path, next_point
 
 n_contours = len(contours)
 print(n_contours)
-
-if n_contours >= 1:
+path = []
+if n_contours == 1:
 	outline = ttfquery.glyph.decomposeOutline(contours[0], steps=3)
 	for points in outline:
 		outline_x = np.append(outline_x,points[0])
 		outline_y = np.append(outline_y,points[1])
-# elif n_contours > 1:
-# 	outline_list = []
-# 	for contour in contours:
-# 		outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
-# 		outline = round_all(outline)
-# 		outline = sorted(set(outline),key=outline.index)
-# 		outline_str = [str(x) for x in outline]
-# 		for i in range(len(outline)-1):
-# 			G.add_node(outline_str[i])
-# 			G.add_edge(outline_str[i],outline_str[i+1])
+elif n_contours > 1:
+	for contour in contours:
+		outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
+		outline = round_all(outline)
+		# outline = sorted(set(outline),key=outline.index)
+		outline_str = [str(x) for x in outline]
+		for i in range(len(outline)-1):
+			G.add_node(outline_str[i])
+			G.add_edge(outline_str[i],outline_str[i+1])
+	G.remove_edges_from(G.selfloop_edges())
+	if graph:
+		nx.draw(G,with_labels=True)
+		plt.show()
+	for p,d in G.degree:
+		if d == 1:
+			start_point = p
+			path.append(eval(p))
+			# print(list(G.adj[p]))
+			for i in range(G.number_of_edges()):
+				path,next_point = find_next_path(p,path)
+				p = next_point
+			break
+	print(path)
 
-# 	nx.draw(G,with_labels=True)
-# 	for p,d in G.degree:
-# 		if d == 1:
-# 			start_point = p
-# 			print(list(G.adj[p]))
-# 			break
-	
+for i in range(len(path)):
+	outline_x = np.append(outline_x,path[i][0])
+	outline_y = np.append(outline_y,path[i][1])
+
 
 
 if not graph:
