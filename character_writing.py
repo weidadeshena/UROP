@@ -12,17 +12,19 @@ import networkx as nx
 animate = True
 graph = False
 
+two_strokes = ["Q","W"]
 
-char = "R"
+char = "A"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
 contours = glyph.calculateContours(font)
+# initialise undirected graph
 G = nx.Graph()
-outline_x = np.array([])
-outline_y = np.array([])
+# initialise path coordinate array
 
 
+# round the tuple to a integer so that it will be on the same node
 def round_all(stuff):
     if isinstance(stuff, list):
         return [round_all(x) for x in stuff]
@@ -30,47 +32,107 @@ def round_all(stuff):
         return tuple(round_all(x) for x in stuff)
     return round(float(stuff))
 
+# find the path with the graph given
 def find_next_path(init_point,path):
-	print(init_point,list(G.adj[init_point]))
-	next_point = list(G.adj[init_point])[0]
-	path.append(eval(next_point))
-	G.remove_edge(init_point,next_point)
+	print(init_point,sorted(list(G.adj[init_point]),reverse=True))
+	if list(G.adj[init_point]):
+		next_point = sorted(list(G.adj[init_point]),reverse=True)[0]
+		path.append(eval(next_point))
+		G.remove_edge(init_point,next_point)
 	return path, next_point
 
-n_contours = len(contours)
-print(n_contours)
-path = []
-if n_contours == 1:
+# find the top point coordinate in a graph
+def find_top():
+	nodes = list(G.nodes)
+	top_y = 0
+	for i in range(len(nodes)):
+		if eval(nodes[i])[1] > top_y:
+			top_y = eval(nodes[i])[1]
+			top_point = nodes[i]
+	return top_point # string type
+
+def path_for_easy_char(outline_x,outline_y):
 	outline = ttfquery.glyph.decomposeOutline(contours[0], steps=3)
 	for points in outline:
 		outline_x = np.append(outline_x,points[0])
 		outline_y = np.append(outline_y,points[1])
-elif n_contours > 1:
+	return outline_x,outline_y
+
+def graph_theory_init(contours):
+	global G
 	for contour in contours:
 		outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
 		outline = round_all(outline)
-		# outline = sorted(set(outline),key=outline.index)
+		# char A is a bit special... need to get rid of duplicate points in contours
+		if char == "A":
+			outline = sorted(set(outline),key=outline.index)
 		outline_str = [str(x) for x in outline]
+		# set up the undirected graph with coordinates of outline points as nodes
+		# if the two points on the contour is connected, an edge is added
 		for i in range(len(outline)-1):
 			G.add_node(outline_str[i])
 			G.add_edge(outline_str[i],outline_str[i+1])
+	# get rid of the self loops: nodes connected to itself
 	G.remove_edges_from(G.selfloop_edges())
+
+
+n_contours = len(contours)
+print(n_contours)
+# path trajectory
+path = [] 
+outline_x = np.array([])
+outline_y = np.array([])
+# if the char only have one contour, use the contour directly
+# otherwise put it in a graph for path planning
+if n_contours == 1:
+	outline_x,outline_y = path_for_easy_char(outline_x,outline_y)
+elif n_contours > 1:
+	graph_theory_init(contours)
+	nodes_and_degree = list(G.degree)
+	list_of_degree = [tup[1] for tup in nodes_and_degree]
 	if graph:
 		nx.draw(G,with_labels=True)
 		plt.show()
-	for p,d in G.degree:
-		if d == 1:
-			start_point = p
-			path.append(eval(p))
-			# print(list(G.adj[p]))
-			for i in range(G.number_of_edges()):
-				if char == "R" and p == str((163,352)):
-					G.add_edge(str((163,352)),str((0,352)))
-					print("added")
-				path,next_point = find_next_path(p,path)
-				p = next_point
-			break
+	if 1 in list_of_degree:
+		node_index = list_of_degree.index(1)
+		p = list(G.nodes)[node_index]
+		path.append(eval(p))
+		for i in range(G.number_of_edges()):
+			# char R is a bit special...
+			if char == "R" and p == str((163,352)):
+				G.add_edge(str((163,352)),str((0,352)))
+				print("added")
+			path,next_point = find_next_path(p,path)
+			p = next_point
+	else:
+		p = find_top()
+		path.append(eval(p))
+		for i in range(G.number_of_edges()):
+			# char B is a bit special...
+			if char == "B" and p == str((163,352)):
+				G.add_edge(str((163,352)),str((0,352)))
+				print("added")
+			path,next_point = find_next_path(p,path)
+			p = next_point
+	# for p,d in G.degree:
+	# 	# if there is a point that only connects to one other point,set it as the starting point
+	# 	# otherwise get the top left point as the starting point
+	# 	if d == 1:
+	# 		start_point = p
+	# 		path.append(eval(p))
+	# 		# print(list(G.adj[p]))
+	# 		for i in range(G.number_of_edges()):
+	# 			# char R is a bit special...
+	# 			if char == "R" and p == str((163,352)):
+	# 				G.add_edge(str((163,352)),str((0,352)))
+	# 				print("added")
+	# 			path,next_point = find_next_path(p,path)
+	# 			p = next_point
+	# 		break # only get the first one
 
+
+
+# get the coordinate for plotting
 for i in range(len(path)):
 	outline_x = np.append(outline_x,path[i][0])
 	outline_y = np.append(outline_y,path[i][1])
