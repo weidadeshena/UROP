@@ -8,13 +8,15 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import networkx as nx
+from math import floor
 
-animate = False
+animate = True
 draw_graph = False
 
 two_strokes = ["Q","W"]
+only_contour_needed = ["E","F","H","K","T","X","Y"]
 
-char = "E"
+char = "c"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -31,7 +33,7 @@ def round_all(stuff):
         return [round_all(x) for x in stuff]
     if isinstance(stuff, tuple):
         return tuple(round_all(x) for x in stuff)
-    return round(float(stuff))
+    return floor(float(stuff))
 
 # find the path with the graph given
 def find_next_path(init_point,path):
@@ -55,6 +57,10 @@ def find_top():
 
 def path_for_easy_char(contour,outline_x,outline_y):
 	outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
+	outline = round_all(outline)
+	# outline.reverse()
+	if char in can_delete_excessive:
+		outline = sorted(set(outline),key=outline.index)
 	for points in outline:
 		outline_x = np.append(outline_x,points[0])
 		outline_y = np.append(outline_y,points[1])
@@ -65,8 +71,8 @@ def graph_theory_init(contours):
 	for contour in contours:
 		outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
 		outline = round_all(outline)
-		# char A is a bit special... need to get rid of duplicate points in contours
-		if char == "A":
+		# # char A is a bit special... need to get rid of duplicate points in contours
+		if char == "A" or char == "P":
 			outline = sorted(set(outline),key=outline.index)
 		outline_str = [str(x) for x in outline]
 		# set up the undirected graph with coordinates of outline points as nodes
@@ -109,9 +115,9 @@ def main_alg(contours):
 	# print(n_contours)
 	outline_x = np.array([])
 	outline_y = np.array([])
-	if n_contours == 1:
+	if n_contours == 1 and char in only_contour_needed:
 		outline_x,outline_y = path_for_easy_char(contours[0],outline_x,outline_y)
-	elif n_contours > 1:
+	else:
 		graph_theory_init(contours)
 		nodes_and_degree = list(G.degree)
 		list_of_degree = [tup[1] for tup in nodes_and_degree]
