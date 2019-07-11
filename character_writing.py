@@ -9,16 +9,17 @@ from matplotlib.animation import FuncAnimation
 import numpy as np
 import networkx as nx
 
-animate = True
-graph = False
+animate = False
+draw_graph = False
 
 two_strokes = ["Q","W"]
 
-char = "A"
+char = "E"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
 contours = glyph.calculateContours(font)
+# print("contours: ",contours)
 # initialise undirected graph
 G = nx.Graph()
 # initialise path coordinate array
@@ -44,6 +45,7 @@ def find_next_path(init_point,path):
 # find the top point coordinate in a graph
 def find_top():
 	nodes = list(G.nodes)
+	print(nodes)
 	top_y = 0
 	for i in range(len(nodes)):
 		if eval(nodes[i])[1] > top_y:
@@ -51,8 +53,8 @@ def find_top():
 			top_point = nodes[i]
 	return top_point # string type
 
-def path_for_easy_char(outline_x,outline_y):
-	outline = ttfquery.glyph.decomposeOutline(contours[0], steps=3)
+def path_for_easy_char(contour,outline_x,outline_y):
+	outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
 	for points in outline:
 		outline_x = np.append(outline_x,points[0])
 		outline_y = np.append(outline_y,points[1])
@@ -75,24 +77,8 @@ def graph_theory_init(contours):
 	# get rid of the self loops: nodes connected to itself
 	G.remove_edges_from(G.selfloop_edges())
 
-
-n_contours = len(contours)
-print(n_contours)
-# path trajectory
-path = [] 
-outline_x = np.array([])
-outline_y = np.array([])
-# if the char only have one contour, use the contour directly
-# otherwise put it in a graph for path planning
-if n_contours == 1:
-	outline_x,outline_y = path_for_easy_char(outline_x,outline_y)
-elif n_contours > 1:
-	graph_theory_init(contours)
-	nodes_and_degree = list(G.degree)
-	list_of_degree = [tup[1] for tup in nodes_and_degree]
-	if graph:
-		nx.draw(G,with_labels=True)
-		plt.show()
+def find_path(list_of_degree):
+	path = []
 	if 1 in list_of_degree:
 		node_index = list_of_degree.index(1)
 		p = list(G.nodes)[node_index]
@@ -114,32 +100,51 @@ elif n_contours > 1:
 				print("added")
 			path,next_point = find_next_path(p,path)
 			p = next_point
-	# for p,d in G.degree:
-	# 	# if there is a point that only connects to one other point,set it as the starting point
-	# 	# otherwise get the top left point as the starting point
-	# 	if d == 1:
-	# 		start_point = p
-	# 		path.append(eval(p))
-	# 		# print(list(G.adj[p]))
-	# 		for i in range(G.number_of_edges()):
-	# 			# char R is a bit special...
-	# 			if char == "R" and p == str((163,352)):
-	# 				G.add_edge(str((163,352)),str((0,352)))
-	# 				print("added")
-	# 			path,next_point = find_next_path(p,path)
-	# 			p = next_point
-	# 		break # only get the first one
+	return path
+
+# if the char only have one contour, use the contour directly
+# otherwise put it in a graph for path planning
+def main_alg(contours):
+	n_contours = len(contours)
+	# print(n_contours)
+	outline_x = np.array([])
+	outline_y = np.array([])
+	if n_contours == 1:
+		outline_x,outline_y = path_for_easy_char(contours[0],outline_x,outline_y)
+	elif n_contours > 1:
+		graph_theory_init(contours)
+		nodes_and_degree = list(G.degree)
+		list_of_degree = [tup[1] for tup in nodes_and_degree]
+		if draw_graph:
+			nx.draw(G,with_labels=True)
+			plt.show()
+		path = find_path(list_of_degree)
+		for i in range(len(path)):
+			outline_x = np.append(outline_x,path[i][0])
+			outline_y = np.append(outline_y,path[i][1])
+	return outline_x,outline_y
 
 
 
-# get the coordinate for plotting
-for i in range(len(path)):
-	outline_x = np.append(outline_x,path[i][0])
-	outline_y = np.append(outline_y,path[i][1])
+# path trajectory
+if char not in two_strokes:
+	outline_x,outline_y = main_alg(contours)
+else:
+	# print(contours)
+	contour1 = contours.pop()
+	outline_x1,outline_y1 = main_alg([contour1])
+	contour2 = contours
+	outline_x2,outline_y2 = main_alg(contour2)
+	plt.plot(outline_x1,outline_y1,marker='x')
+	plt.plot(outline_x2,outline_y2,marker='x')
+	plt.gca().set_aspect('equal', adjustable='box')
 
 
 
-if not graph:
+
+
+# plotting
+if not draw_graph:
 	if animate:
 		fig = plt.figure()
 		plt.xlim(-200,1000)
