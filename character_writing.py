@@ -14,9 +14,10 @@ animate = True
 draw_graph = False
 
 two_strokes = ["Q","W"]
-only_contour_needed = ["E","F","H","K","T","X","Y"]
+only_contour_needed = ["E","F","H","K","T","X","Y","x"]
 
-char = "c"
+
+char = "d"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -33,15 +34,20 @@ def round_all(stuff):
         return [round_all(x) for x in stuff]
     if isinstance(stuff, tuple):
         return tuple(round_all(x) for x in stuff)
-    return floor(float(stuff))
+    return round(float(stuff))
 
 # find the path with the graph given
 def find_next_path(init_point,path):
 	print(init_point,sorted(list(G.adj[init_point]),reverse=True))
 	if list(G.adj[init_point]):
 		next_point = sorted(list(G.adj[init_point]),reverse=True)[0]
+		if char == "a" and init_point == str((346,77)):
+			next_point = str((344,66))
+		if char == "b" and init_point == str((0,700)):
+			next_point = str((0,0))
 		path.append(eval(next_point))
-		G.remove_edge(init_point,next_point)
+		if G.has_edge(init_point,next_point):
+			G.remove_edge(init_point,next_point)
 	return path, next_point
 
 # find the top point coordinate in a graph
@@ -56,11 +62,9 @@ def find_top():
 	return top_point # string type
 
 def path_for_easy_char(contour,outline_x,outline_y):
-	outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
+	outline = ttfquery.glyph.decomposeOutline(contour, steps=5)
 	outline = round_all(outline)
 	# outline.reverse()
-	if char in can_delete_excessive:
-		outline = sorted(set(outline),key=outline.index)
 	for points in outline:
 		outline_x = np.append(outline_x,points[0])
 		outline_y = np.append(outline_y,points[1])
@@ -69,7 +73,7 @@ def path_for_easy_char(contour,outline_x,outline_y):
 def graph_theory_init(contours):
 	global G
 	for contour in contours:
-		outline = ttfquery.glyph.decomposeOutline(contour, steps=3)
+		outline = ttfquery.glyph.decomposeOutline(contour, steps=5)
 		outline = round_all(outline)
 		# # char A is a bit special... need to get rid of duplicate points in contours
 		if char == "A" or char == "P":
@@ -80,6 +84,8 @@ def graph_theory_init(contours):
 		for i in range(len(outline)-1):
 			G.add_node(outline_str[i])
 			G.add_edge(outline_str[i],outline_str[i+1])
+	if char == "d":
+		G = nx.contracted_nodes(G,str((38,29)),str((38,28)))
 	# get rid of the self loops: nodes connected to itself
 	G.remove_edges_from(G.selfloop_edges())
 
@@ -93,17 +99,21 @@ def find_path(list_of_degree):
 			# char R is a bit special...
 			if char == "R" and p == str((163,352)):
 				G.add_edge(str((163,352)),str((0,352)))
-				print("added")
+			if char == "a" and p == str((346,224)):
+				G.add_edge(str((346,224)),str((346,77)))
 			path,next_point = find_next_path(p,path)
 			p = next_point
 	else:
 		p = find_top()
 		path.append(eval(p))
+		if char == "b":
+			G.remove_edge(str((0,77)),str((0,433)))
 		for i in range(G.number_of_edges()):
 			# char B is a bit special...
 			if char == "B" and p == str((163,352)):
 				G.add_edge(str((163,352)),str((0,352)))
 				print("added")
+
 			path,next_point = find_next_path(p,path)
 			p = next_point
 	return path
@@ -145,6 +155,20 @@ else:
 	plt.plot(outline_x2,outline_y2,marker='x')
 	plt.gca().set_aspect('equal', adjustable='box')
 
+
+with open("letters/char_lower_{}.txt".format(char),"w") as w:
+	w.write(str(outline_x))
+	w.write('\n')
+	w.write(str(outline_y))
+	# w.write(str(outline_x2))
+	# w.write('\n')
+	# w.write(str(outline_y2))
+	# w.write('\n')	
+	# w.write(str(outline_x1))
+	# w.write('\n')
+	# w.write(str(outline_y1))
+	# w.write('\n')
+	
 
 
 
