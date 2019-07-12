@@ -10,14 +10,15 @@ import numpy as np
 import networkx as nx
 from math import floor
 
-animate = True
+animate = False
+# draw_graph = True
 draw_graph = False
 
-two_strokes = ["Q","W"]
-only_contour_needed = ["E","F","H","K","T","X","Y","x"]
+two_strokes = ["Q","W","i","j","w"]
+only_contour_needed = ["E","F","H","K","T","X","Y","x","f","k","t","x"]
 
 
-char = "d"
+char = "w"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -45,6 +46,13 @@ def find_next_path(init_point,path):
 			next_point = str((344,66))
 		if char == "b" and init_point == str((0,700)):
 			next_point = str((0,0))
+		if char == "h" and init_point == str((0,0)):
+			next_point = str((0,690))
+		if char == "m" and init_point == str((346,433)):
+			if len(list(G.adj[init_point])) == 2:
+				next_point = next_point = sorted(list(G.adj[init_point]),reverse=True)[1]
+			else:
+				pass
 		path.append(eval(next_point))
 		if G.has_edge(init_point,next_point):
 			G.remove_edge(init_point,next_point)
@@ -53,7 +61,6 @@ def find_next_path(init_point,path):
 # find the top point coordinate in a graph
 def find_top():
 	nodes = list(G.nodes)
-	print(nodes)
 	top_y = 0
 	for i in range(len(nodes)):
 		if eval(nodes[i])[1] > top_y:
@@ -76,7 +83,7 @@ def graph_theory_init(contours):
 		outline = ttfquery.glyph.decomposeOutline(contour, steps=5)
 		outline = round_all(outline)
 		# # char A is a bit special... need to get rid of duplicate points in contours
-		if char == "A" or char == "P":
+		if char == "A" or char == "P" or char == "p" or char == "q":
 			outline = sorted(set(outline),key=outline.index)
 		outline_str = [str(x) for x in outline]
 		# set up the undirected graph with coordinates of outline points as nodes
@@ -86,6 +93,16 @@ def graph_theory_init(contours):
 			G.add_edge(outline_str[i],outline_str[i+1])
 	if char == "d":
 		G = nx.contracted_nodes(G,str((38,29)),str((38,28)))
+	if char == "p":
+		G = nx.contracted_nodes(G,str((308,28)),str((308,29)))
+	if char == "h":
+		G.add_edge(str((0,0)),str((0,690)))
+		G.remove_edge(str((0,0)),str((0,433)))
+	if char == "m" or char == "n" or char == "r":
+		G.remove_edge(str((0,0)),str((0,433)))
+		G.add_edge(str((0,0)),str((0,510)))
+	if char == "y":
+		G.remove_edge(str((346,-103)),str((346,77)))
 	# get rid of the self loops: nodes connected to itself
 	G.remove_edges_from(G.selfloop_edges())
 
@@ -101,6 +118,10 @@ def find_path(list_of_degree):
 				G.add_edge(str((163,352)),str((0,352)))
 			if char == "a" and p == str((346,224)):
 				G.add_edge(str((346,224)),str((346,77)))
+			if char == "e" and p == str((0,77)):
+				G.add_edge(str((0,77)),str((0,433)))
+			if char == "m" and p == str((346,0)):
+				G.add_edge(str((346,0)),str((346,433)))
 			path,next_point = find_next_path(p,path)
 			p = next_point
 	else:
@@ -157,17 +178,18 @@ else:
 
 
 with open("letters/char_lower_{}.txt".format(char),"w") as w:
-	w.write(str(outline_x))
+	# w.write(str(outline_x))
+	# w.write('\n')
+	# w.write(str(outline_y))
+	# w.write('\n')
+	w.write(str(outline_x2))
 	w.write('\n')
-	w.write(str(outline_y))
-	# w.write(str(outline_x2))
-	# w.write('\n')
-	# w.write(str(outline_y2))
-	# w.write('\n')	
-	# w.write(str(outline_x1))
-	# w.write('\n')
-	# w.write(str(outline_y1))
-	# w.write('\n')
+	w.write(str(outline_y2))
+	w.write('\n')	
+	w.write(str(outline_x1))
+	w.write('\n')
+	w.write(str(outline_y1))
+	w.write('\n')
 	
 
 
