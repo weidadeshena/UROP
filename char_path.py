@@ -9,8 +9,7 @@ from matplotlib.animation import FuncAnimation
 import numpy as np
 import networkx as nx
 from math import floor
-
-animate = False
+animate = True
 # draw_graph = True
 draw_graph = False
 
@@ -18,7 +17,7 @@ two_strokes = ["Q","W","i","j","w"]
 only_contour_needed = ["E","F","H","K","T","X","Y","x","f","k","t","x"]
 
 
-char = "w"
+char = "Z"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -176,20 +175,23 @@ else:
 	plt.plot(outline_x2,outline_y2,marker='x')
 	plt.gca().set_aspect('equal', adjustable='box')
 
+outline_total = np.array([outline_x, outline_y])
+outline_total = outline_total.T
 
-with open("letters/char_lower_{}.txt".format(char),"w") as w:
-	# w.write(str(outline_x))
+np.savetxt("letters/char_cap_{}.txt".format(char),outline_total,fmt=['%d','%d'])
+# with open("letters/char_lower_{}.txt".format(char),"w") as w:
+# 	w.write(str(outline_x))
+# 	w.write('\n')
+# 	w.write(str(outline_y))
+# 	w.write('\n')
+	# w.write(str(outline_x2))
 	# w.write('\n')
-	# w.write(str(outline_y))
+	# w.write(str(outline_y2))
+	# w.write('\n')	
+	# w.write(str(outline_x1))
 	# w.write('\n')
-	w.write(str(outline_x2))
-	w.write('\n')
-	w.write(str(outline_y2))
-	w.write('\n')	
-	w.write(str(outline_x1))
-	w.write('\n')
-	w.write(str(outline_y1))
-	w.write('\n')
+	# w.write(str(outline_y1))
+	# w.write('\n')
 	
 
 
