@@ -17,7 +17,7 @@ two_stroke_char = ["i","j","w","Q","W"]
 v = 500
 timestp = 0.0
 
-amax = 50
+amax = 500
 vmax = 100
 
 # find curvature using Menger curvature and Heron's formula
@@ -167,6 +167,50 @@ def find_segment(path,angle_threshold):
 	segment_list.append(path[segment_index[0][n-1]+1:,:])
 	return segment_list
 
+def find_total_distance(segment):
+	total_distance = 0
+	for i in range(len(segment)-1):
+		total_distance += distance(segment[i],segment[i+1])
+	return total_distance
+
+def find_v_and_t(segment,vmax,amx,t0):
+	v = [0]
+	t = [t0]
+	total_s = find_total_distance(segment)
+	if total_s > vmax**2/amax:
+		dist = 0
+		s1,s2,t1,t2 = find_key_distance_long(total_s,vmax,amax)
+		for i in range(len(segment)-1):
+			dist += distance(segment[i],segment[i+1])
+			if dist <= s1:
+				tmpt_t = np.sqrt(2*dist/amax)
+				t.append(t0+tmpt_t)
+				v.append(amax*tmpt_t)
+			elif dist > s1 and dist <= s2:
+				t.append(t0+t1+(dist-s1)/vmax)
+				v.append(vmax)
+			elif dist > s2 and dist < total_s:
+				tmpt_t = t1+t2-np.sqrt(2*(total_s-dist)/amax)
+				t.append(t0+tmpt_t)
+				v.append(vmax-amax*(tmpt_t-t2))
+	else:
+		dist = 0
+		s1,t1 = find_key_distance_short(total_s,amax)
+		for i in range(len(segment)-1):
+			dist += distance(segment[i],segment[i+1])
+			if dist <= s1:
+				tmpt_t = np.sqrt(2*dist/amax)
+				t.append(t0+tmpt_t)
+				v.append(amax*tmpt_t)
+			else:
+				tmpt_t = 2*t1-np.sqrt(2*(total_s-dist)/amax)
+				t.append(t0+tmpt_t)
+				v.append(amax*(2*t1-tmpt_t))
+	return v,t
+
+
+
+
 x,y,contact = find_char_trajectory("B",0)
 x = np.asarray(x)
 y = np.asarray(y)
@@ -193,7 +237,14 @@ for i in range(len(x)-1):
 # print(path)
 # plot_trajectory(path.T[0],path.T[1])
 segment_list = find_segment(path,angle_threshold)
-for segment in segment_list
+t0=0
+for segment in segment_list:
+	v,t = find_v_and_t(segment,vmax,amax,t0)
+	t0 = t[-1]
+	print(t)
+
+
+
 
 
 
