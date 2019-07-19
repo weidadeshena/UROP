@@ -6,10 +6,11 @@ import matplotlib.cm as cm
 
 
 # to_write = input("Enter something: \n")
-to_write = "A"
+to_write = "ABC"
 list_char = list(to_write)
 width = 0
 angle_threshold = 120/180*np.pi
+point_spacing = 20
 
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
@@ -17,8 +18,8 @@ two_stroke_char = ["i","j","w","Q","W"]
 v = 500
 timestp = 0.0
 
-amax = 500
-vmax = 100
+amax = 2000
+vmax = 1000
 
 # find curvature using Menger curvature and Heron's formula
 def find_curvature(point1,point2,point3):
@@ -214,22 +215,22 @@ def find_v_and_t(segment,vmax,amx,t0):
 x,y,contact = find_char_trajectory("B",0)
 x = np.asarray(x)
 y = np.asarray(y)
-coordinates = np.array([x,y]).T
-# for i in range(len(x)-2):
-# 	# print(coordinates[i],coordinates[i+1])
-# 	# print(type(coordinates[i]))
-# 	angle = find_angle(coordinates[i],coordinates[i+1],coordinates[i+2])
-# 	print(coordinates[i])
-# 	print(angle)
+coordinates= np.array([x,y]).T
+# coordinates = np.array([])
+# for pair in coordinates_pair_list:
+# 	coordinates = np.append(coordinates,)
+
+coordinates = [pair for pair in coordinates]
+
 
 path = np.array([coordinates[0]])
 for i in range(len(x)-1):
 	# print(i)
 	dis = distance(coordinates[i],coordinates[i+1])
 	line_vec = (coordinates[i+1] - coordinates[i])/dis
-	while dis > 85:
+	while dis > point_spacing:
 		# print(dis)
-		new_point = coordinates[i] + 85*line_vec
+		new_point = coordinates[i] + point_spacing*line_vec
 		path = np.vstack((path,new_point))
 		dis = distance(new_point,coordinates[i+1])
 		coordinates[i] = new_point
@@ -238,10 +239,38 @@ for i in range(len(x)-1):
 # plot_trajectory(path.T[0],path.T[1])
 segment_list = find_segment(path,angle_threshold)
 t0=0
+v_list = []
+t_list = []
 for segment in segment_list:
 	v,t = find_v_and_t(segment,vmax,amax,t0)
 	t0 = t[-1]
-	print(t)
+	v_list.append(v)
+	t_list.append(t)
+
+# print(segment_list)
+
+# plt.gca().set_aspect('equal', adjustable='box')
+plt.xlim(-100,600)
+plt.ylim(-200,800)
+for i in range(len(segment_list)):
+	try:
+		text
+	except NameError:
+		pass
+	else:
+		text.remove()
+	plt.scatter(segment_list[i][0][0],segment_list[i][0][1])
+	text = plt.text(500,700,"velocity: {}".format(int(v_list[i][0])))
+	plt.draw()
+	for j in range(1,len(t_list[i])):
+		text.remove()
+		x_coord = segment_list[i][:j,0].T
+		y_coord = segment_list[i][:j,1].T
+		plt.scatter(x_coord,y_coord)
+		text = plt.text(500,700,"velocity: {}".format(int(v_list[i][j])))
+		plt.draw()
+		plt.pause(t_list[i][j]-t_list[i][j-1])
+
 
 
 
