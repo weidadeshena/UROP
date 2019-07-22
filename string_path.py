@@ -6,11 +6,11 @@ import matplotlib.cm as cm
 
 
 # to_write = input("Enter something: \n")
-to_write = "ABC"
+to_write = "SLAM"
 list_char = list(to_write)
 width = 0
-angle_threshold = 120/180*np.pi
-point_spacing = 20
+angle_threshold = 130/180*np.pi
+point_spacing = 80
 
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
@@ -18,8 +18,8 @@ two_stroke_char = ["i","j","w","Q","W"]
 v = 500
 timestp = 0.0
 
-amax = 2000
-vmax = 1000
+amax = 5000
+vmax = 2000
 
 # find curvature using Menger curvature and Heron's formula
 def find_curvature(point1,point2,point3):
@@ -40,6 +40,7 @@ def find_angle(point1,point2,point3):
 def distance(a,b):
 	return np.linalg.norm(a-b)
 
+# constant velocity
 def find_timestamp(x,y):
 	global timestp
 	x = [point for sublist in x for point in sublist]
@@ -159,6 +160,7 @@ def find_segment(path,angle_threshold):
 		angle_array = np.append(angle_array,angle)
 	segment_index = np.argwhere(angle_array<angle_threshold)
 	segment_index = segment_index.T
+	# print("segment_index: ",segment_index)
 	segment_list = []
 	segment_list.append(path[0:segment_index[0][0]+2,:])
 	segment_list.append(path[segment_index[0][0]+1:segment_index[0][1]+2,:])
@@ -212,19 +214,22 @@ def find_v_and_t(segment,vmax,amx,t0):
 
 
 
-x,y,contact = find_char_trajectory("B",0)
+x,y,contact = find_whole_trajectory(list_char)
 x = np.asarray(x)
 y = np.asarray(y)
-coordinates= np.array([x,y]).T
-# coordinates = np.array([])
-# for pair in coordinates_pair_list:
-# 	coordinates = np.append(coordinates,)
+coordinates_pair_list = np.array([x,y]).T
+coordinates = []
+# print(coordinates_pair_list)
+for pair in coordinates_pair_list:
+	# print(pair)
+	for j in range(len(pair[0])):
+		coordinates.append(np.array([pair[0][j],pair[1][j]]))
 
-coordinates = [pair for pair in coordinates]
+# print(coordinates)
 
 
 path = np.array([coordinates[0]])
-for i in range(len(x)-1):
+for i in range(len(coordinates)-1):
 	# print(i)
 	dis = distance(coordinates[i],coordinates[i+1])
 	line_vec = (coordinates[i+1] - coordinates[i])/dis
@@ -235,7 +240,7 @@ for i in range(len(x)-1):
 		dis = distance(new_point,coordinates[i+1])
 		coordinates[i] = new_point
 	path = np.vstack((path,coordinates[i+1]))
-# print(path)
+print(path)
 # plot_trajectory(path.T[0],path.T[1])
 segment_list = find_segment(path,angle_threshold)
 t0=0
@@ -250,7 +255,7 @@ for segment in segment_list:
 # print(segment_list)
 
 # plt.gca().set_aspect('equal', adjustable='box')
-plt.xlim(-100,600)
+plt.xlim(-100,2000)
 plt.ylim(-200,800)
 for i in range(len(segment_list)):
 	try:
