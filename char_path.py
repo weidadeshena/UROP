@@ -13,11 +13,11 @@ animate = True
 # draw_graph = True
 draw_graph = False
 
-two_strokes = ["Q","W","i","j","w"]
+two_strokes = ["Q","W","i","j","w","?"]
 only_contour_needed = ["E","F","H","K","T","X","Y","x","f","k","t","x"]
 
 
-char = "R"
+char = "a"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
@@ -162,36 +162,37 @@ def main_alg(contours):
 
 
 
-# path trajectory
-if char not in two_strokes:
-	outline_x,outline_y = main_alg(contours)
-else:
-	# print(contours)
-	contour1 = contours.pop()
-	outline_x1,outline_y1 = main_alg([contour1])
-	contour2 = contours
-	outline_x2,outline_y2 = main_alg(contour2)
-	plt.plot(outline_x1,outline_y1,marker='x')
-	plt.plot(outline_x2,outline_y2,marker='x')
-	plt.gca().set_aspect('equal', adjustable='box')
+# # path trajectory
+# if char not in two_strokes:
+# 	outline_x,outline_y = main_alg(contours)
+# else:
+# 	# print(contours)
+# 	contour1 = contours.pop()
+# 	outline_x1,outline_y1 = main_alg([contour1])
+# 	contour2 = contours
+# 	outline_x2,outline_y2 = main_alg(contour2)
+# 	plt.plot(outline_x1,outline_y1,marker='x')
+# 	plt.plot(outline_x2,outline_y2,marker='x')
+# 	plt.gca().set_aspect('equal', adjustable='box')
 
-# outline_total = np.array([outline_x, outline_y])
-# outline_total = outline_total.T
+# outline_x = np.array([])
+# outline_y = np.array([])
+# for contour in contours:
+# 	outline = ttfquery.glyph.decomposeOutline(contour, steps=5)
+# 	outline = round_all(outline)
+# 	# outline = sorted(set(outline),key=outline.index)
+# 	for points in outline:
+# 		outline_x = np.append(outline_x,points[0])
+# 		outline_y = np.append(outline_y,points[1])
 
-# np.savetxt("letters/char_cap_{}.txt".format(char),outline_total,fmt=['%d','%d'])
-# with open("letters/char_lower_{}.txt".format(char),"w") as w:
-# 	w.write(str(outline_x))
-# 	w.write('\n')
-# 	w.write(str(outline_y))
-# 	w.write('\n')
-	# w.write(str(outline_x2))
-	# w.write('\n')
-	# w.write(str(outline_y2))
-	# w.write('\n')	
-	# w.write(str(outline_x1))
-	# w.write('\n')
-	# w.write(str(outline_y1))
-	# w.write('\n')
+# print(outline_x,'\n',outline_y)
+
+outline_x,outline_y = main_alg(contours)
+outline_total = np.array([outline_x, outline_y])
+outline_total = outline_total.T
+
+# np.savetxt("letters/{}.txt".format(ord(char)),outline_total,fmt=['%d','%d'])
+
 	
 
 
@@ -215,7 +216,7 @@ if not draw_graph:
 			# points.remove()
 			# return line
 
-		ani = FuncAnimation(fig, animate, frames=100, interval=200)
+		ani = FuncAnimation(fig, animate, frames=500, interval=100)
 	else:
 		plt.plot(outline_x,outline_y,marker='x')
 		plt.gca().set_aspect('equal', adjustable='box')

@@ -6,17 +6,18 @@ import matplotlib.cm as cm
 
 
 # to_write = input("Enter something: \n")
-to_write = "SLAM"
+to_write = "#Stefan"
 list_char = list(to_write)
 width = 0
 angle_threshold = 130/180*np.pi
-point_spacing = 80
+point_spacing = 10
 
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 two_stroke_char = ["i","j","w","Q","W"]
 v = 500
 timestp = 0.0
+space_width = 400
 
 amax = 5000
 vmax = 2000
@@ -40,6 +41,9 @@ def find_angle(point1,point2,point3):
 def distance(a,b):
 	return np.linalg.norm(a-b)
 
+def find_0(contact):
+	return [i for i, x in enumerate(contact) if x == 0]
+
 # constant velocity
 def find_timestamp(x,y):
 	global timestp
@@ -58,60 +62,43 @@ def find_timestamp(x,y):
 		timestamp.append(timestp)
 	return timestamp
 
+# find the trajectory of one char
 def find_char_trajectory(char,width):
 	x = []
 	y = []
 	contact = []
-	if char.isupper():
-		filename = "letters/char_cap_{}.txt".format(char)
-		with open(filename, 'r') as f: 
-			lines = f.readlines()
-			for line in lines:
-				x.append(int(line.split(' ')[0]))
-				y.append(int(line.split(' ')[1]))
-				contact.append(int(line.split(' ')[2]))
-			# print(contact)
-		x = [element+width for element in x]
-		if char in two_stroke_char:
-			i = contact.index(0)+1
-			x1 = x[:i]
-			x2 = x[i:]
-			y1 = y[:i]
-			y2 = y[i:]
-			x = [x1,x2]
-			y = [y1,y2]
-	elif char.islower():
-		filename = "letters/char_lower_{}.txt".format(char)
-		with open(filename, 'r') as f: 
-			lines = f.readlines()
-			x = []
-			y = []
-			contact = []
-			for line in lines:
-				x.append(int(line.split(' ')[0]))
-				y.append(int(line.split(' ')[1]))
-				contact.append(int(line.split(' ')[2]))
-			# print(contact)
-		x = [element+width for element in x]
-		if char in two_stroke_char:
-			i = contact.index(0)+1
-			x1 = x[:i]
-			x2 = x[i:]
-			y1 = y[:i]
-			y2 = y[i:]
-			x = [x1,x2]
-			y = [y1,y2]
+	filename = "letters/{}.txt".format(ord(char))
+	with open(filename, 'r') as f: 
+		lines = f.readlines()
+		for line in lines:
+			x.append(int(line.split(' ')[0]))
+			y.append(int(line.split(' ')[1]))
+			contact.append(int(line.split(' ')[2]))
+		# print(contact)
+	x = [element+width for element in x]
+	if char in two_stroke_char:
+		i = contact.index(0)+1
+		x1 = x[:i]
+		x2 = x[i:]
+		y1 = y[:i]
+		y2 = y[i:]
+		x = [x1,x2]
+		y = [y1,y2]
 	return x,y,contact
 
+# find the trajectory of the whole word
 def find_whole_trajectory(list_char):
 	x_all = []
 	y_all = []
 	contact_all = []
 	global width
 	for char in list_char:
-		if char.isalpha():
+		if char.isspace():
+			width += space_width
+		else:
 			x,y,contact = find_char_trajectory(char,width)
-			width += glyphquery.width(font,char)
+			glyph_name = glyphquery.glyphName(font,char)
+			width += glyphquery.width(font,glyph_name)
 			contact_all.append(contact)
 			if any(isinstance(ls,list) for ls in x):
 				x_all.append(x[0])
@@ -121,7 +108,6 @@ def find_whole_trajectory(list_char):
 			else:
 				x_all.append(x)
 				y_all.append(y)
-		else: width += 150
 	return x_all,y_all,contact_all
 
 def plot_trajectory(x_all,y_all):
@@ -129,7 +115,7 @@ def plot_trajectory(x_all,y_all):
 		plt.plot(x_all[i],y_all[i],marker="o")
 
 def plot_colourline(x,y,c):
-    c = cm.jet((c-np.min(c))/(np.max(c)-np.min(c)))
+    c = cm.plasma([v/2000 for v in c])
     ax = plt.gca()
     for i in np.arange(len(x)-1):
         ax.plot([x[i],x[i+1]], [y[i],y[i+1]], c=c[i])
@@ -158,6 +144,7 @@ def find_segment(path,angle_threshold):
 	for i in range(path.shape[0]-2):
 		angle = find_angle(path[i],path[i+1],path[i+2])
 		angle_array = np.append(angle_array,angle)
+	print(angle_array)
 	segment_index = np.argwhere(angle_array<angle_threshold)
 	segment_index = segment_index.T
 	# print("segment_index: ",segment_index)
@@ -217,6 +204,7 @@ def find_v_and_t(segment,vmax,amx,t0):
 x,y,contact = find_whole_trajectory(list_char)
 x = np.asarray(x)
 y = np.asarray(y)
+print(contact)
 coordinates_pair_list = np.array([x,y]).T
 coordinates = []
 # print(coordinates_pair_list)
@@ -240,7 +228,7 @@ for i in range(len(coordinates)-1):
 		dis = distance(new_point,coordinates[i+1])
 		coordinates[i] = new_point
 	path = np.vstack((path,coordinates[i+1]))
-print(path)
+# print(path)
 # plot_trajectory(path.T[0],path.T[1])
 segment_list = find_segment(path,angle_threshold)
 t0=0
@@ -255,7 +243,9 @@ for segment in segment_list:
 # print(segment_list)
 
 # plt.gca().set_aspect('equal', adjustable='box')
-plt.xlim(-100,2000)
+
+# animation
+plt.xlim(-100,np.amax(path)+100)
 plt.ylim(-200,800)
 for i in range(len(segment_list)):
 	try:
@@ -264,23 +254,26 @@ for i in range(len(segment_list)):
 		pass
 	else:
 		text.remove()
-	plt.scatter(segment_list[i][0][0],segment_list[i][0][1])
-	text = plt.text(500,700,"velocity: {}".format(int(v_list[i][0])))
-	plt.draw()
-	for j in range(1,len(t_list[i])):
-		text.remove()
-		x_coord = segment_list[i][:j,0].T
-		y_coord = segment_list[i][:j,1].T
-		plt.scatter(x_coord,y_coord)
-		text = plt.text(500,700,"velocity: {}".format(int(v_list[i][j])))
-		plt.draw()
-		plt.pause(t_list[i][j]-t_list[i][j-1])
+	plot_colourline(segment_list[i][:,0].T,segment_list[i][:,1].T,v_list[i])
+	# plt.scatter(segment_list[i][0][0],segment_list[i][0][1])
+	# text = plt.text(500,700,"velocity: {}".format(int(v_list[i][0])))
+	# plt.draw()
+	# for j in range(1,len(t_list[i])):
+	# 	text.remove()
+	# 	x_coord = segment_list[i][:j,0].T
+	# 	y_coord = segment_list[i][:j,1].T
+	# 	plt.scatter(x_coord,y_coord)
+	# 	text = plt.text(500,700,"velocity: {}".format(int(v_list[i][j])))
+	# 	plt.draw()
+	# 	plt.pause(t_list[i][j]-t_list[i][j-1])
+
+# plot with colour changes as velocity
+# for i in range(len(segment_list)):
+# 	plot_colourline(segment_list[i][:,0].T,segment_list[i][:,1].T,v_list[i])
 
 
 
-
-
-
+plt.show()
 
 # np.savetxt("letters/cap_B.txt",coordinates,fmt='%d %d')
 
@@ -297,14 +290,6 @@ for i in range(len(segment_list)):
 
 
 
-newf=""
-# with open(filename,'r') as f:
-#     for line in f:
-#         newf+=line.strip()+" 1\n"
-#     f.close()
-# with open(filename,'w') as f:
-#     f.write(newf)
-#     f.close
 
 
 # newf=""
