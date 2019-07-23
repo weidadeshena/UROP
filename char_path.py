@@ -17,7 +17,7 @@ two_strokes = ["Q","W","i","j","w","?"]
 only_contour_needed = ["E","F","H","K","T","X","Y","x","f","k","t","x"]
 
 
-char = "a"
+char = "e"
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
