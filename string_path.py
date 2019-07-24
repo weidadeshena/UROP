@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 
-# to_write = input("Enter a word: \n")
-to_write = "ello"
+to_write = input("Enter a word: \n")
+# to_write = "ello"
 list_char = list(to_write)
 width = 0
 angle_threshold = 130/180*np.pi
@@ -21,8 +21,8 @@ space_width = 400
 text_size = 1
 
 
-amax = 5000
-vmax = 2000
+amax = 5
+vmax = 2
 
 # find curvature using Menger curvature and Heron's formula
 def find_curvature(point1,point2,point3):
@@ -121,7 +121,7 @@ def plot_trajectory(x_all,y_all):
 		plt.plot(x_all[i],y_all[i],marker="o")
 
 def plot_colourline(x,y,c):
-    c = cm.plasma([v/2000 for v in c])
+    c = cm.plasma([v/vmax for v in c])
     ax = plt.gca()
     for i in np.arange(len(x)-1):
         ax.plot([x[i],x[i+1]], [y[i],y[i+1]], c=c[i])
@@ -257,7 +257,7 @@ segment_list = find_segment(path,angle_threshold)
 print(type(segment_list))
 segments = list()
 for segment in segment_list:
-	segments.append(segment/880)
+	segments.append(segment/880*text_size)
 segment_list = segments
 
 t0=0
@@ -271,9 +271,11 @@ for segment in segment_list:
 	t_list.append(t)
 print("timestamp generated")
 # print(segment_list)
+print(v_list)
+print(t_list)
 
 path = path*text_size/880
-# plt.gca().set_aspect('equal', adjustable='box')
+plt.gca().set_aspect('equal', adjustable='box')
 plt.xlim(np.amin(path[:,0]),np.amax(path[:,0]))
 plt.ylim(np.amin(path[:,1]),np.amax(path[:,1]))
 k=0
