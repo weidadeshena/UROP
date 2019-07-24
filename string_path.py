@@ -241,20 +241,19 @@ for i in range(len(coordinates)-1):
 			coordinates[i] = new_point
 		contact_new.append(0)
 	path = np.vstack((path,coordinates[i+1]))
-
+path = path*text_size/880
 print("Points added.")
 print("Calculating velocity...")
 segment_list = find_segment(path,angle_threshold)
 segments = list()
 for segment in segment_list:
-	segments.append(segment/880*text_size)
+	segments.append(segment)
 segment_list = segments
 
 t0=0
 v_list = []
 t_list = []
 for segment in segment_list:
-	
 	v,t = find_v_and_t(segment,vmax,amax,t0)
 	t0 = t[-1]
 	v_list.append(v)
@@ -262,54 +261,79 @@ for segment in segment_list:
 print("timestamp generated")
 
 
-path = path*text_size/880
-plt.gca().set_aspect('equal', adjustable='box')
-plt.xlim(np.amin(path[:,0])-1,np.amax(path[:,0])+1)
-plt.ylim(np.amin(path[:,1])-1,np.amax(path[:,1])+1)
-k=0
-while True:
-	animated = input("Enter 1 if you want to see the animation, 0 if you want to see the plot:\n")
-	# animated = "1"
-	if animated == "1":
-		for i in range(len(segment_list)):
-			k+=1
-			for j in range(1,len(segment_list[i])-1):
-				if contact_new[k] == 1:
-					x_coord = segment_list[i][j-1:j+1,0].T
-					y_coord = segment_list[i][j-1:j+1,1].T
-					plt.plot(x_coord,y_coord,c='r')
-					plt.draw()
-					if (t_list[i][j]-t_list[i][j-1])> 0.001:
-						plt.pause(t_list[i][j]-t_list[i][j-1])
-				else:
-					x_coord = segment_list[i][j-1:j+1,0].T
-					y_coord = segment_list[i][j-1:j+1,1].T
-					plt.plot(x_coord,y_coord,c='b')
-					plt.draw()
-					if (t_list[i][j]-t_list[i][j-1])> 0.001:
-						plt.pause(t_list[i][j]-t_list[i][j-1])
+t_list_flat = flatten_list(t_list)
+t_list_flat.insert(0,0)
+v_comparison_list = []
+a_comparison_list = []
+for i in range(1,len(path)-1):
+	velocity = distance(path[i-1],path[i+1])/2*(t_list_flat[i+1]-t_list_flat[i-1])
+	acceleration = velocity/2*(t_list_flat[i+1]-t_list_flat[i-1])
+	v_bool = abs(velocity)<vmax
+	a_bool = abs(acceleration)<amax
+	v_comparison_list.append(v_bool)
+	a_comparison_list.append(a_bool)
+
+
+
+
+
+
+
+
+
+
+if all(v_comparison_list) and all(a_comparison_list):
+	print("sanity check: \nvelocity and acceleration is below the max value \nproceeding...")
+	plt.gca().set_aspect('equal', adjustable='box')
+	plt.xlim(np.amin(path[:,0])-1,np.amax(path[:,0])+1)
+	plt.ylim(np.amin(path[:,1])-1,np.amax(path[:,1])+1)
+	k=0
+	while True:
+		animated = input("Enter 1 if you want to see the animation, 0 if you want to see the plot:\n")
+		# animated = "1"
+		if animated == "1":
+			for i in range(len(segment_list)):
 				k+=1
-			if contact_new[k] == 1:
-				plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='r')
-			else:
-				plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='b')
-		print("Done!")
-		break
-	elif animated == "0":
-		for i in range(len(segment_list)):
-			plot_colourline(segment_list[i][:,0].T,segment_list[i][:,1].T,v_list[i])
-		print("Done!")
-		break
-	else:
-		print("Please enter a valid response")
-		continue
+				for j in range(1,len(segment_list[i])-1):
+					if contact_new[k] == 1:
+						x_coord = segment_list[i][j-1:j+1,0].T
+						y_coord = segment_list[i][j-1:j+1,1].T
+						plt.plot(x_coord,y_coord,c='r')
+						plt.draw()
+						if (t_list[i][j]-t_list[i][j-1])> 0.001:
+							plt.pause(t_list[i][j]-t_list[i][j-1])
+					else:
+						x_coord = segment_list[i][j-1:j+1,0].T
+						y_coord = segment_list[i][j-1:j+1,1].T
+						plt.plot(x_coord,y_coord,c='b')
+						plt.draw()
+						if (t_list[i][j]-t_list[i][j-1])> 0.001:
+							plt.pause(t_list[i][j]-t_list[i][j-1])
+					k+=1
+				if contact_new[k] == 1:
+					plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='r')
+				else:
+					plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='b')
+			print("Done!")
+			break
+		elif animated == "0":
+			for i in range(len(segment_list)):
+				plot_colourline(segment_list[i][:,0].T,segment_list[i][:,1].T,v_list[i])
+			print("Done!")
+			break
+		else:
+			print("Please enter a valid response")
+			continue
+	contact = np.array([contact_new]).T
+	t_list = np.insert(np.array(sorted(flatten_list(t_list))),0,0).T.reshape(len(contact),1)
+	trajectory = np.concatenate((np.concatenate((path,contact),axis=1),t_list),axis=1)
+	# np.savetxt("trajectory.txt",trajectory,fmt='%d %d %d %f')
+	plt.show()
+else:
+	print("this is not safe your math is wrong you suck")
 
 
-contact = np.array([contact_new]).T
-t_list = np.insert(np.array(sorted(flatten_list(t_list))),0,0).T.reshape(len(contact),1)
-trajectory = np.concatenate((np.concatenate((path,contact),axis=1),t_list),axis=1)
-# np.savetxt("trajectory.txt",trajectory,fmt='%d %d %d %f')
-plt.show()
+
 
 
 
