@@ -22,7 +22,6 @@ font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
 glyph = glyph.Glyph(ttfquery.glyphquery.glyphName(font, char))
 contours = glyph.calculateContours(font)
-# print("contours: ",contours)
 # initialise undirected graph
 G = nx.Graph()
 # initialise path coordinate array
@@ -160,32 +159,6 @@ def main_alg(contours):
 			outline_y = np.append(outline_y,path[i][1])
 	return outline_x,outline_y
 
-
-
-# # path trajectory
-# if char not in two_strokes:
-# 	outline_x,outline_y = main_alg(contours)
-# else:
-# 	# print(contours)
-# 	contour1 = contours.pop()
-# 	outline_x1,outline_y1 = main_alg([contour1])
-# 	contour2 = contours
-# 	outline_x2,outline_y2 = main_alg(contour2)
-# 	plt.plot(outline_x1,outline_y1,marker='x')
-# 	plt.plot(outline_x2,outline_y2,marker='x')
-# 	plt.gca().set_aspect('equal', adjustable='box')
-
-# outline_x = np.array([])
-# outline_y = np.array([])
-# for contour in contours:
-# 	outline = ttfquery.glyph.decomposeOutline(contour, steps=5)
-# 	outline = round_all(outline)
-# 	# outline = sorted(set(outline),key=outline.index)
-# 	for points in outline:
-# 		outline_x = np.append(outline_x,points[0])
-# 		outline_y = np.append(outline_y,points[1])
-
-# print(outline_x,'\n',outline_y)
 
 outline_x,outline_y = main_alg(contours)
 outline_total = np.array([outline_x, outline_y])

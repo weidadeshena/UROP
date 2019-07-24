@@ -6,7 +6,7 @@ import matplotlib.cm as cm
 
 
 to_write = input("Enter a word: \n")
-# to_write = "ello"
+# to_write = "NaTuRaL wRiTiNg"
 list_char = list(to_write)
 width = 0
 angle_threshold = 130/180*np.pi
@@ -14,15 +14,14 @@ point_spacing = 100
 
 font_url = "cnc_v.ttf"
 font = describe.openFont(font_url)
-two_stroke_char = ["i","j","w","Q","W"]
 v = 500
 timestp = 0.0
 space_width = 400
 text_size = 1
 
 
-amax = 5
-vmax = 2
+amax = 50
+vmax = 10
 
 # find curvature using Menger curvature and Heron's formula
 def find_curvature(point1,point2,point3):
@@ -43,11 +42,17 @@ def find_angle(point1,point2,point3):
 def distance(a,b):
 	return np.linalg.norm(a-b)
 
-def find_0(contact):
-	return [i for i, x in enumerate(contact) if x == 0]
-
 def flatten_list(lst):
 	return [item for sublist in lst for item in sublist]
+
+# split the list based on given indices
+def indexsplit(some_list, indices):
+    indices = [i+1 for i in indices]
+    indices.insert(0,0)
+    my_list = []
+    for start, end in zip(indices, indices[1:]):
+        my_list.append(some_list[start:end])
+    return my_list
 
 # constant velocity
 def find_timestamp(x,y):
@@ -59,8 +64,6 @@ def find_timestamp(x,y):
 	coordinates = np.array([x,y]).T
 	timestamp = [timestp]
 	for i in range(len(x)-1):
-		# print(coordinates[i],coordinates[i+1])
-		# print(type(coordinates[i]))
 		d = distance(coordinates[i],coordinates[i+1])
 		dt = d/v
 		timestp += dt
@@ -79,17 +82,12 @@ def find_char_trajectory(char,width):
 			x.append(int(line.split(' ')[0]))
 			y.append(int(line.split(' ')[1]))
 			contact.append(int(line.split(' ')[2]))
-		# print(contact)
 	x = [element+width for element in x]
-	if char in two_stroke_char:
-		i = contact.index(0)+1
-		x1 = x[:i]
-		x2 = x[i:]
-		y1 = y[:i]
-		y2 = y[i:]
-		x = [x1,x2]
-		y = [y1,y2]
-	return x,y,contact
+	contact_array_char = np.array(contact)
+	indices = np.where(contact_array_char==0)[0].tolist()
+	x_list = indexsplit(x,indices)
+	y_list = indexsplit(y,indices)
+	return x_list,y_list,contact
 
 # find the trajectory of the whole word
 def find_whole_trajectory(list_char):
@@ -107,10 +105,9 @@ def find_whole_trajectory(list_char):
 			width += glyphquery.width(font,glyph_name)
 			contact_all.append(contact)
 			if any(isinstance(ls,list) for ls in x):
-				x_all.append(x[0])
-				x_all.append(x[1])
-				y_all.append(y[0])
-				y_all.append(y[1])
+				for i in range(len(x)):
+					x_all.append(x[i])
+					y_all.append(y[i])
 			else:
 				x_all.append(x)
 				y_all.append(y)
@@ -131,7 +128,6 @@ def plot_trajectory_with_t(x_all,y_all,timestamp):
 	x_flat = [point for sublist in x_all for point in sublist]
 	y_flat = [point for sublist in y_all for point in sublist]
 	plot_colourline(x_flat,y_flat,timestamp)
-	# print(timestamp)
 
 def find_key_distance_long(total_distance,vmax,amax):
 	s1 = vmax**2/(2*amax)
@@ -217,7 +213,6 @@ coordinates_pair_list = np.array([x,y]).T
 coordinates = []
 # flatten the coordinate list
 for pair in coordinates_pair_list:
-	# print(pair)
 	for j in range(len(pair[0])):
 		coordinates.append(np.array([pair[0][j],pair[1][j]]))
 
@@ -231,7 +226,6 @@ for i in range(len(coordinates)-1):
 	line_vec = (coordinates[i+1] - coordinates[i])/dis
 	if contact[i] == 1:
 		while dis > point_spacing:
-			# print(dis)
 			new_point = coordinates[i] + point_spacing*line_vec
 			path = np.vstack((path,new_point))
 			contact_new.append(1)
@@ -240,7 +234,6 @@ for i in range(len(coordinates)-1):
 		contact_new.append(1)
 	else:
 		while dis > point_spacing:
-			# print(dis)
 			new_point = coordinates[i] + point_spacing*line_vec
 			path = np.vstack((path,new_point))
 			contact_new.append(0)
@@ -250,11 +243,8 @@ for i in range(len(coordinates)-1):
 	path = np.vstack((path,coordinates[i+1]))
 
 print("Points added.")
-# print(path)
-# plot_trajectory(path.T[0],path.T[1])
 print("Calculating velocity...")
 segment_list = find_segment(path,angle_threshold)
-print(type(segment_list))
 segments = list()
 for segment in segment_list:
 	segments.append(segment/880*text_size)
@@ -270,46 +260,39 @@ for segment in segment_list:
 	v_list.append(v)
 	t_list.append(t)
 print("timestamp generated")
-# print(segment_list)
-print(v_list)
-print(t_list)
+
 
 path = path*text_size/880
 plt.gca().set_aspect('equal', adjustable='box')
-plt.xlim(np.amin(path[:,0]),np.amax(path[:,0]))
-plt.ylim(np.amin(path[:,1]),np.amax(path[:,1]))
+plt.xlim(np.amin(path[:,0])-1,np.amax(path[:,0])+1)
+plt.ylim(np.amin(path[:,1])-1,np.amax(path[:,1])+1)
 k=0
 while True:
 	animated = input("Enter 1 if you want to see the animation, 0 if you want to see the plot:\n")
+	# animated = "1"
 	if animated == "1":
 		for i in range(len(segment_list)):
-			# c = cm.plasma([v/2000 for v in v_list[i]])
 			k+=1
 			for j in range(1,len(segment_list[i])-1):
-				# text.remove()
-				# print(segment_list[i])
-				# print(segment_list[i][j-1:j,0])
 				if contact_new[k] == 1:
 					x_coord = segment_list[i][j-1:j+1,0].T
 					y_coord = segment_list[i][j-1:j+1,1].T
 					plt.plot(x_coord,y_coord,c='r')
-					# text = plt.text(500,700,"velocity: {}".format(int(v_list[i][j])))
 					plt.draw()
-					plt.pause(t_list[i][j]-t_list[i][j-1])
+					if (t_list[i][j]-t_list[i][j-1])> 0.001:
+						plt.pause(t_list[i][j]-t_list[i][j-1])
 				else:
 					x_coord = segment_list[i][j-1:j+1,0].T
 					y_coord = segment_list[i][j-1:j+1,1].T
 					plt.plot(x_coord,y_coord,c='b')
-					# text = plt.text(500,700,"velocity: {}".format(int(v_list[i][j])))
 					plt.draw()
-					plt.pause(t_list[i][j]-t_list[i][j-1])
+					if (t_list[i][j]-t_list[i][j-1])> 0.001:
+						plt.pause(t_list[i][j]-t_list[i][j-1])
 				k+=1
 			if contact_new[k] == 1:
 				plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='r')
 			else:
 				plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='b')
-			# k+=1
-
 		print("Done!")
 		break
 	elif animated == "0":
@@ -326,7 +309,6 @@ contact = np.array([contact_new]).T
 t_list = np.insert(np.array(sorted(flatten_list(t_list))),0,0).T.reshape(len(contact),1)
 trajectory = np.concatenate((np.concatenate((path,contact),axis=1),t_list),axis=1)
 # np.savetxt("trajectory.txt",trajectory,fmt='%d %d %d %f')
-# print(trajectory)
 plt.show()
 
 
