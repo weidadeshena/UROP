@@ -20,9 +20,13 @@ space_width = 400
 text_size = 1
 z_distance = 0.2
 
+amax_x = 50
+amax_y = 50
+amax_z = 10
 
-amax = 50
-vmax = 10
+vmax_x = 10
+vmax_y = 10
+vmax_z = 100
 
 
 def find_angle(point1,point2,point3):
@@ -67,7 +71,7 @@ def find_char_trajectory(char,width):
 	return x_list,y_list,contact
 
 # find the trajectory of the whole word
-def find_whole_trajectory(list_char):
+def find_whole_trajectory_2d(list_char):
 	x_all = []
 	y_all = []
 	contact_all = []
@@ -90,9 +94,6 @@ def find_whole_trajectory(list_char):
 				y_all.append(y)
 	return x_all,y_all,contact_all
 
-def plot_trajectory(x_all,y_all):
-	for i in range(len(x_all)):
-		plt.plot(x_all[i],y_all[i],marker="o")
 
 def plot_colourline(x,y,c):
     c = cm.plasma([v/vmax for v in c])
@@ -101,10 +102,6 @@ def plot_colourline(x,y,c):
         ax.plot([x[i],x[i+1]], [y[i],y[i+1]], c=c[i])
     return
 
-def plot_trajectory_with_t(x_all,y_all,timestamp):
-	x_flat = [point for sublist in x_all for point in sublist]
-	y_flat = [point for sublist in y_all for point in sublist]
-	plot_colourline(x_flat,y_flat,timestamp)
 
 def find_key_distance_long(total_distance,vmax,amax):
 	s1 = vmax**2/(2*amax)
@@ -118,10 +115,10 @@ def find_key_distance_short(total_distance,amax):
 	t = np.sqrt(total_distance/amax)
 	return s,t
 
-def find_segment(path,angle_threshold):
-	angle_array = np.array([])
+def find_segment(path):
+	dot_product_array = np.array([])
 	for i in range(path.shape[0]-2):
-		angle = find_angle(path[i],path[i+1],path[i+2])
+		dot_product = 
 		angle_array = np.append(angle_array,angle)
 	# print(angle_array)
 	segment_index = np.argwhere(angle_array<angle_threshold)
@@ -142,58 +139,7 @@ def find_total_distance(segment):
 		total_distance += distance(segment[i],segment[i+1])
 	return total_distance
 
-def find_v_and_t(segment,vmax,amx,t0):
-	v = []
-	t = []
-	total_s = find_total_distance(segment)
-	if total_s > vmax**2/amax:
-		dist = 0
-		s1,s2,t1,t2 = find_key_distance_long(total_s,vmax,amax)
-		for i in range(len(segment)-1):
-			dist += distance(segment[i],segment[i+1])
-			if dist <= s1:
-				tmpt_t = np.sqrt(2*dist/amax)
-				t.append(t0+tmpt_t)
-				v.append(amax*tmpt_t)
-			elif dist > s1 and dist <= s2:
-				t.append(t0+t1+(dist-s1)/vmax)
-				v.append(vmax)
-			elif dist > s2:
-				tmpt_t = t1+t2-np.sqrt(2*(total_s-dist)/amax)
-				t.append(t0+tmpt_t)
-				v.append(vmax-amax*(tmpt_t-t2))
-	else:
-		dist = 0
-		s1,t1 = find_key_distance_short(total_s,amax)
-		for i in range(len(segment)-1):
-			dist += distance(segment[i],segment[i+1])
-			if dist <= s1:
-				tmpt_t = np.sqrt(2*dist/amax)
-				t.append(t0+tmpt_t)
-				v.append(amax*tmpt_t)
-			else:
-				tmpt_t = 2*t1-np.sqrt(2*(total_s-dist)/amax)
-				t.append(t0+tmpt_t)
-				v.append(amax*(2*t1-tmpt_t))
-	return v,t
-
-def generate_3d_trajectory(path,contact,timestamp):
-	path_3d = np.array([path[0][0],path[0][1],0.0])
-	for i in range(1,len(path)):
-		if contact[i-1] == 1:
-			point_temp = np.append(path[i],0.0)
-			path_3d = np.vstack((path_3d,point_temp))
-		elif contact[i-1] == 0 and contact[i] == 0:
-			point_temp = np.append(path[i],z_distance)
-			path_3d = np.vstack((path_3d,point_temp))
-		elif contact[i-1] == 0 and contact[i] == 1:
-			point_temp = np.append(path[i],0.0)
-			path_3d = np.vstack((path_3d,point_temp))
-		else:
-			print("error occured in contact list")
-	trajectory = np.concatenate((np.concatenate((path_3d,contact),axis=1),timestamp),axis=1)
-	return trajectory
-
+# add a point every point_spacing unit
 def add_points(x,y,contact):
 	x = np.asarray(x)
 	y = np.asarray(y)
@@ -230,17 +176,42 @@ def add_points(x,y,contact):
 	return path,contact_new
 
 
+def find_3d_path(path,contact):
+	path_3d = np.array([path[0][0],path[0][1],0.0])
+	for i in range(1,len(path)):
+		if contact[i-1] == 1:
+			point_temp = np.append(path[i],0.0)
+			path_3d = np.vstack((path_3d,point_temp))
+		elif contact[i-1] == 0 and contact[i] == 0:
+			point_temp = np.append(path[i],z_distance)
+			path_3d = np.vstack((path_3d,point_temp))
+		elif contact[i-1] == 0 and contact[i] == 1:
+			point_temp = np.append(path[i],0.0)
+			path_3d = np.vstack((path_3d,point_temp))
+		else:
+			print("error occured in contact list")
+	return path_3d
+
+def find_3d_v_and_t(path_3d):
+
+
+
+
+
+
 x,y,contact = find_whole_trajectory(list_char)
 print("Trajectory calculated.")
+
+# add points in gap
 path,contact_new = add_points(x,y,contact)
 path = path*text_size/880
+path_3d = find_3d_path(path,contact_new)
 print("Points added.")
-print("Calculating velocity...")
-segment_list = find_segment(path,angle_threshold)
-segments = list()
+print("generating timestamps...")
+segments = find_segment(path,angle_threshold)
+segment_list = list()
 for segment in segment_list:
-	segments.append(segment)
-segment_list = segments
+	segment_list.append(segment)
 
 t0=0
 v_list = []
@@ -253,6 +224,7 @@ for segment in segment_list:
 print("timestamp generated")
 
 
+# test if it exceed the limit vmax and amax
 t_list_flat = flatten_list(t_list)
 t_list_flat.insert(0,0)
 v_comparison_list = []
@@ -314,28 +286,8 @@ if all(v_comparison_list) and all(a_comparison_list):
 	t_list = np.insert(np.array(sorted(flatten_list(t_list))),0,0).T.reshape(len(contact),1)
 	# trajectory = np.concatenate((np.concatenate((path,contact),axis=1),t_list),axis=1)
 	trajectory = generate_3d_trajectory(path,contact,t_list)
-	# print(trajectory)
+	print(trajectory)
 	# np.savetxt("trajectory.txt",trajectory,fmt='%d %d %d %f')
 	plt.show()
 else:
 	print("this is not safe your math is wrong you suck")
-
-
-
-
-
-
-
-
-
-
-# newf=""
-# with open(filename,'r') as f:
-#     for line in f:
-#         newf+=line.strip()+" 1\n"
-#     f.close()
-# with open(filename,'w') as f:
-#     f.write(newf)
-#     f.close()
-
-
