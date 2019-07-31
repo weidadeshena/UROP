@@ -23,6 +23,8 @@ z_distance = 0.2
 
 amax = 50
 vmax = 10
+vmax_z = 10
+amax_z = 5
 
 
 def find_angle(point1,point2,point3):
@@ -118,23 +120,34 @@ def find_key_distance_short(total_distance,amax):
 	t = np.sqrt(total_distance/amax)
 	return s,t
 
-def find_segment(path,angle_threshold):
+# ONLY 2D
+def find_segment(path,angle_threshold,contact): # only feed in the x and y path ty
+	segment_contact = []
 	angle_array = np.array([])
 	for i in range(path.shape[0]-2):
 		angle = find_angle(path[i],path[i+1],path[i+2])
 		angle_array = np.append(angle_array,angle)
 	# print(angle_array)
 	segment_index = np.argwhere(angle_array<angle_threshold)
-	segment_index = segment_index.T
+	segment_index = segment_index.T[0]
 	# print("segment_index: ",segment_index)
 	segment_list = []
-	segment_list.append(path[0:segment_index[0][0]+2,:])
-	segment_list.append(path[segment_index[0][0]+1:segment_index[0][1]+2,:])
+	segment_list.append(path[0:segment_index[0]+2,:])
+	segment_list.append(path[segment_index[0]+1:segment_index[1]+2,:])
 	n = segment_index.shape[1]
+	if contact[segment_index[0]] == 1:
+		segment_contact.append(1)
+	else:
+		segment_contact.append(0)
 	for i in range(1,n-1):
-		segment_list.append(path[segment_index[0][i]+1:segment_index[0][i+1]+2,:])
-	segment_list.append(path[segment_index[0][n-1]+1:,:])
-	return segment_list
+		segment_list.append(path[segment_index[i]+1:segment_index[i+1]+2,:])
+		if contact[segment_index[i]] == 1:
+			segment_contact.append(1)
+		else:
+			segment_contact.append(0)
+	segment_list.append(path[segment_index[n-1]+1:,:])
+	segment_contact.append(1)
+	return segment_list,segment_contact
 
 def find_total_distance(segment):
 	total_distance = 0
@@ -142,57 +155,124 @@ def find_total_distance(segment):
 		total_distance += distance(segment[i],segment[i+1])
 	return total_distance
 
-def find_v_and_t(segment,vmax,amx,t0):
-	v = []
-	t = []
-	total_s = find_total_distance(segment)
-	if total_s > vmax**2/amax:
-		dist = 0
-		s1,s2,t1,t2 = find_key_distance_long(total_s,vmax,amax)
-		for i in range(len(segment)-1):
-			dist += distance(segment[i],segment[i+1])
-			if dist <= s1:
-				tmpt_t = np.sqrt(2*dist/amax)
-				t.append(t0+tmpt_t)
-				v.append(amax*tmpt_t)
-			elif dist > s1 and dist <= s2:
-				t.append(t0+t1+(dist-s1)/vmax)
-				v.append(vmax)
-			elif dist > s2:
-				tmpt_t = t1+t2-np.sqrt(2*(total_s-dist)/amax)
-				t.append(t0+tmpt_t)
-				v.append(vmax-amax*(tmpt_t-t2))
-	else:
-		dist = 0
-		s1,t1 = find_key_distance_short(total_s,amax)
-		for i in range(len(segment)-1):
-			dist += distance(segment[i],segment[i+1])
-			if dist <= s1:
-				tmpt_t = np.sqrt(2*dist/amax)
-				t.append(t0+tmpt_t)
-				v.append(amax*tmpt_t)
+def find_2d_v_a(path2d,v,t):
+	for i in range()
+
+
+def find_v_and_t(segment_list,segment_contact,vmax,amx,t0):
+	timestamp = [[0]]
+	vel2d = []
+	acceleration=[]
+	for segment in segment_list:
+		if segment_contact == 1:
+			v = []
+			t = []
+			total_s = find_total_distance(segment)
+			if total_s > vmax**2/amax:
+				dist = 0
+				s1,s2,t1,t2 = find_key_distance_long(total_s,vmax,amax)
+				for i in range(len(segment)-1):
+					dist += distance(segment[i],segment[i+1])
+					if dist <= s1:
+						tmpt_t = np.sqrt(2*dist/amax)
+						t.append(t0+tmpt_t)
+						v.append(amax*tmpt_t)
+					elif dist > s1 and dist <= s2:
+						t.append(t0+t1+(dist-s1)/vmax)
+						v.append(vmax)
+					elif dist > s2:
+						tmpt_t = t1+t2-np.sqrt(2*(total_s-dist)/amax)
+						t.append(t0+tmpt_t)
+						v.append(vmax-amax*(tmpt_t-t2))
 			else:
-				tmpt_t = 2*t1-np.sqrt(2*(total_s-dist)/amax)
-				t.append(t0+tmpt_t)
-				v.append(amax*(2*t1-tmpt_t))
+				dist = 0
+				s1,t1 = find_key_distance_short(total_s,amax)
+				for i in range(len(segment)-1):
+					dist += distance(segment[i],segment[i+1])
+					if dist <= s1:
+						tmpt_t = np.sqrt(2*dist/amax)
+						t.append(t0+tmpt_t)
+						v.append(amax*tmpt_t)
+					else:
+						tmpt_t = 2*t1-np.sqrt(2*(total_s-dist)/amax)
+						t.append(t0+tmpt_t)
+						v.append(amax*(2*t1-tmpt_t))
+			vel2d.append(v)
+			timestamp.append(t)
+		elif segment_contact == 0:
+			v = []
+			t = []
+			total_s = find_total_distance(segment)
+			if total_s > vmax**2/amax:
+				dist = 0
+				s1,s2,t1,t2 = find_key_distance_long(total_s,vmax,amax)
+				for i in range(len(segment)-1):
+					dist += distance(segment[i],segment[i+1])
+					if dist <= s1:
+						tmpt_t = np.sqrt(2*dist/amax)
+						t.append(t0+tmpt_t)
+						v.append(amax*tmpt_t)
+					elif dist > s1 and dist <= s2:
+						t.append(t0+t1+(dist-s1)/vmax)
+						v.append(vmax)
+					elif dist > s2:
+						tmpt_t = t1+t2-np.sqrt(2*(total_s-dist)/amax)
+						t.append(t0+tmpt_t)
+						v.append(vmax-amax*(tmpt_t-t2))
+			else:
+				dist = 0
+				s1,t1 = find_key_distance_short(total_s,amax)
+				for i in range(len(segment)-1):
+					dist += distance(segment[i],segment[i+1])
+					if dist <= s1:
+						tmpt_t = np.sqrt(2*dist/amax)
+						t.append(t0+tmpt_t)
+						v.append(amax*tmpt_t)
+					else:
+						tmpt_t = 2*t1-np.sqrt(2*(total_s-dist)/amax)
+						t.append(t0+tmpt_t)
+						v.append(amax*(2*t1-tmpt_t))
+			t_xy = t[0]-t0
+			t_z = np.sqrt(z_distance/amax_z)
+			if t_z>t_xy:
+				t[0] = t_z+t0
+				difference = t[1]-t0-2*t_z
+				t[1] = t0+2*t_z
+				t[2:] = [stamp+difference for stamp in t[2:]]
+				t[-2] = t[-3]+t_z
+				t[-1] = t[-2]+t_z
+				v_z = vmax_z
+			else:
+				vmax_z = amax_z*t_xy
+			vel2d.append(v)
+		t0 = t[-1]
 	return v,t
 
-def generate_3d_trajectory(path,contact,timestamp):
+def generate_3d_path(path,contact):
+	contact_new = [1]
 	path_3d = np.array([path[0][0],path[0][1],0.0])
 	for i in range(1,len(path)):
 		if contact[i-1] == 1:
 			point_temp = np.append(path[i],0.0)
 			path_3d = np.vstack((path_3d,point_temp))
+			contact_new.append(1)
 		elif contact[i-1] == 0 and contact[i] == 0:
+			point_temp = np.append((path[i]+path[i-1])/2,z_distance/2)
+			path_3d = np.vstack((path_3d,point_temp))
+			contact_new.append(0)
 			point_temp = np.append(path[i],z_distance)
 			path_3d = np.vstack((path_3d,point_temp))
+			contact_new.append(0)
 		elif contact[i-1] == 0 and contact[i] == 1:
+			point_temp = np.append((path[i-1]+path[i])/2,z_distance/2)
+			path_3d = np.vstack((path_3d,point_temp))
+			contact_new.append(0)
 			point_temp = np.append(path[i],0.0)
 			path_3d = np.vstack((path_3d,point_temp))
+			contact_new.append(1)
 		else:
 			print("error occured in contact list")
-	trajectory = np.concatenate((np.concatenate((path_3d,contact),axis=1),timestamp),axis=1)
-	return trajectory
+	return path_3d,contact_new
 
 def add_points(x,y,contact):
 	x = np.asarray(x)
@@ -234,9 +314,10 @@ x,y,contact = find_whole_trajectory(list_char)
 print("Trajectory calculated.")
 path,contact_new = add_points(x,y,contact)
 path = path*text_size/880
+path_3d,contact_new = generate_3d_path(path,contact_new)
 print("Points added.")
 print("Calculating velocity...")
-segment_list = find_segment(path,angle_threshold)
+segment_list,segment_contact = find_segment(path[:,:2],angle_threshold,contact_new)
 segments = list()
 for segment in segment_list:
 	segments.append(segment)
@@ -319,23 +400,4 @@ if all(v_comparison_list) and all(a_comparison_list):
 	plt.show()
 else:
 	print("this is not safe your math is wrong you suck")
-
-
-
-
-
-
-
-
-
-
-# newf=""
-# with open(filename,'r') as f:
-#     for line in f:
-#         newf+=line.strip()+" 1\n"
-#     f.close()
-# with open(filename,'w') as f:
-#     f.write(newf)
-#     f.close()
-
 
