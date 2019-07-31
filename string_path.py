@@ -12,7 +12,7 @@ width = 0
 angle_threshold = 130/180*np.pi
 point_spacing = 100
 
-font_url = "cnc_v.ttf"
+font_url = "fonts/cnc_v.ttf"
 font = describe.openFont(font_url)
 # v = 500
 timestp = 0.0
