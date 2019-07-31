@@ -24,8 +24,8 @@ text_size = 1
 z_distance = 0.2
 
 
-amax = 2000
-vmax = 1000
+amax = 50
+vmax = 20
 vmax_z = 10
 amax_z = 50
 
@@ -95,9 +95,6 @@ def find_whole_trajectory(list_char):
 				y_all.append(y)
 	return x_all,y_all,contact_all
 
-def plot_trajectory(x_all,y_all):
-	for i in range(len(x_all)):
-		plt.plot(x_all[i],y_all[i],marker="o")
 
 def plot_colourline(x,y,c):
     c = cm.plasma([v/vmax for v in c])
@@ -105,11 +102,6 @@ def plot_colourline(x,y,c):
     for i in np.arange(len(x)-1):
         ax.plot([x[i],x[i+1]], [y[i],y[i+1]],c=c[i])
     return
-
-def plot_trajectory_with_t(x_all,y_all,timestamp):
-	x_flat = [point for sublist in x_all for point in sublist]
-	y_flat = [point for sublist in y_all for point in sublist]
-	plot_colourline(x_flat,y_flat,timestamp)
 
 def find_key_distance_long(total_distance,vmax,amax):
 	s1 = vmax**2/(2*amax)
@@ -385,9 +377,7 @@ else:
 
 
 timestamp,vel,acc = find_v_and_t(segment_list,vmax,amax)
-# print(timestamp)
 path_3d,vel3d,acc3d,timestamps = generate_3d_trajectory(path,contact_new,vel,timestamp,acc,t_mid,z_distance,max_vel_z)
-
 
 
 while True:
@@ -418,76 +408,14 @@ while True:
 		print("Please enter a valid response")
 		continue
 
-
+vel3d = np.asarray(vel3d)
+acc3d = np.asarray(acc3d)
+timestamps = np.asarray(timestamps).reshape(len(timestamps),1)
+timestamps = timestamps*10**9
+print(vel3d.shape,acc3d.shape,timestamps.shape,path_3d.shape)
+trajectory = np.concatenate((np.concatenate((np.concatenate((path_3d,vel3d),axis=1),acc3d),axis=1),timestamps),axis=1)
+np.savetxt("trajectory.txt",trajectory,fmt='%f,%f,%f,%f,%f,%f,%f,%f,%f,%f')
 
 # plot_colourline_3d(path_3d[:,0],path_3d[:,1],path_3d[:,2],abs_v(vel3d[1:]))
 plt.show()
-
-
-# t_list_flat = flatten_list(t_list)
-# t_list_flat.insert(0,0)
-# v_comparison_list = []
-# a_comparison_list = []
-# for i in range(1,len(path)-1):
-# 	velocity = distance(path[i-1],path[i+1])/2*(t_list_flat[i+1]-t_list_flat[i-1])
-# 	acceleration = velocity/2*(t_list_flat[i+1]-t_list_flat[i-1])
-# 	v_bool = abs(velocity)<vmax
-# 	a_bool = abs(acceleration)<amax
-# 	v_comparison_list.append(v_bool)
-# 	a_comparison_list.append(a_bool)
-
-
-
-
-# if all(v_comparison_list) and all(a_comparison_list):
-# 	print("sanity check: \nvelocity and acceleration is below the max value \nproceeding...")
-# 	plt.gca().set_aspect('equal', adjustable='box')
-# 	plt.xlim(np.amin(path[:,0])-1,np.amax(path[:,0])+1)
-# 	plt.ylim(np.amin(path[:,1])-1,np.amax(path[:,1])+1)
-# 	k=0
-# 	while True:
-# 		animated = input("Enter 1 if you want to see the animation, 0 if you want to see the plot:\n")
-# 		# animated = "1"
-# 		if animated == "1":
-# 			for i in range(len(segment_list)):
-# 				k+=1
-# 				for j in range(1,len(segment_list[i])-1):
-# 					if contact_new[k] == 1:
-# 						x_coord = segment_list[i][j-1:j+1,0].T
-# 						y_coord = segment_list[i][j-1:j+1,1].T
-# 						plt.plot(x_coord,y_coord,c='r')
-# 						plt.draw()
-# 						if (t_list[i][j]-t_list[i][j-1])> 0.001:
-# 							plt.pause(t_list[i][j]-t_list[i][j-1])
-# 					else:
-# 						x_coord = segment_list[i][j-1:j+1,0].T
-# 						y_coord = segment_list[i][j-1:j+1,1].T
-# 						plt.plot(x_coord,y_coord,c='b')
-# 						plt.draw()
-# 						if (t_list[i][j]-t_list[i][j-1])> 0.001:
-# 							plt.pause(t_list[i][j]-t_list[i][j-1])
-# 					k+=1
-# 				if contact_new[k] == 1:
-# 					plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='r')
-# 				else:
-# 					plt.plot(segment_list[i][-2:,0],segment_list[i][-2:,1],c='b')
-# 			print("Done!")
-# 			break
-# 		elif animated == "0":
-# 			for i in range(len(segment_list)):
-# 				plot_colourline(segment_list[i][:,0].T,segment_list[i][:,1].T,v_list[i])
-# 			print("Done!")
-# 			break
-# 		else:
-# 			print("Please enter a valid response")
-# 			continue
-# 	contact = np.array([contact_new]).T
-# 	t_list = np.insert(np.array(sorted(flatten_list(t_list))),0,0).T.reshape(len(contact),1)
-# 	# trajectory = np.concatenate((np.concatenate((path,contact),axis=1),t_list),axis=1)
-# 	trajectory = generate_3d_trajectory(path,contact,t_list)
-# 	# print(trajectory)
-# 	# np.savetxt("trajectory.txt",trajectory,fmt='%d %d %d %f')
-# 	plt.show()
-# else:
-# 	print("this is not safe your math is wrong you suck")
 
