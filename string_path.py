@@ -118,22 +118,37 @@ def find_key_distance_short(total_distance,amax):
 	t = np.sqrt(total_distance/amax)
 	return s,t
 
-def find_segment(path,angle_threshold):
-	angle_array = np.array([])
-	for i in range(path.shape[0]-2):
-		angle = find_angle(path[i],path[i+1],path[i+2])
-		angle_array = np.append(angle_array,angle)
-	# print(angle_array)
-	segment_index = np.argwhere(angle_array<angle_threshold)
-	segment_index = segment_index.T
-	# print("segment_index: ",segment_index)
+def find_segment(path,angle_threshold,contact): # only feed in the x and y path ty
+	segment_contact = []
+	start_index = 0
+	for i in range(1,len(contact)):
+		if contact[i] == 0 and contact[i-1] == 1:
+			segment_contact.append(path[start_index:i+1])
+			start_index = i
+		elif contact[i] == 1 and contact[i-1] == 0:
+			segment_contact.append(path[start_index:i+1])
+			start_index = i
+		else:
+			pass
+	segment_contact.append(path[start_index:])
 	segment_list = []
-	segment_list.append(path[0:segment_index[0][0]+2,:])
-	segment_list.append(path[segment_index[0][0]+1:segment_index[0][1]+2,:])
-	n = segment_index.shape[1]
-	for i in range(1,n-1):
-		segment_list.append(path[segment_index[0][i]+1:segment_index[0][i+1]+2,:])
-	segment_list.append(path[segment_index[0][n-1]+1:,:])
+	for segment in segment_contact:
+		angle_array = np.array([])
+		if len(segment) > 3:
+			for i in range(len(segment)-2):
+				angle = find_angle(path[i],path[i+1],path[i+2])
+				angle_array = np.append(angle_array,angle)
+			# print(angle_array)
+			segment_index = np.argwhere(angle_array<angle_threshold)
+			segment_index = segment_index.T[0]
+			n = len(segment_index)
+			if n > 0:
+				segment_list.append(segment[:segment_index[0]+2,:])
+				for i in range(n-1):
+					segment_list.append(path[segment_index[i]+1:segment_index[i+1]+2,:])
+				segment_list.append(segment[segment_index[n-1]+1:,:])
+			else: segment_list.append(segment)
+		else: segment_list.append(segment)
 	return segment_list
 
 def find_total_distance(segment):
@@ -236,17 +251,16 @@ path,contact_new = add_points(x,y,contact)
 path = path*text_size/880
 print("Points added.")
 print("Calculating velocity...")
-segment_list = find_segment(path,angle_threshold)
-segments = list()
-for segment in segment_list:
-	segments.append(segment)
-segment_list = segments
+segment_list = find_segment(path,angle_threshold,contact_new)
+print(segment_list)
+
 
 t0=0
 v_list = []
 t_list = []
 for segment in segment_list:
 	v,t = find_v_and_t(segment,vmax,amax,t0)
+	print(v)
 	t0 = t[-1]
 	v_list.append(v)
 	t_list.append(t)
