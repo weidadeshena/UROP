@@ -39,9 +39,9 @@ void whiteBoardEstimator::EKF_initialisation()
 {
 	srand (static_cast <unsigned> (time(0)));
 	double LO = -0.1, HI = 0.1;
-	phi_true_ = LO + static_cast<double>(rand()) / static_cast <double> (RAND_MAX/(HI-LO));
+	phi_true_ = LO + static_cast<double>(rand())/static_cast<double>(RAND_MAX/(HI-LO));
 	LO = -3.1415926; HI = 3.1415926;
-	psi_true_ = LO + static_cast<double>(rand()) / static_cast <double> (RAND_MAX/(HI-LO));
+	psi_true_ = LO + static_cast<double>(rand())/static_cast<double>(RAND_MAX/(HI-LO));
 	w_r_true_ = (Eigen::Vector3d::Random()+Eigen::Vector3d(1,1,1))*5.0;
 	this->getBoardRotationMatrix(phi_true_,psi_true_,C_WT_true_);
 	 x_true_ << w_r_true_(0), w_r_true_(1), w_r_true_(2), phi_true_, psi_true_;
