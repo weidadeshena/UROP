@@ -31,8 +31,8 @@ Eigen::Vector3d whiteBoardEstimator::generateMeasurement()
 	Eigen::Vector3d randXZVect(x,0.0,z);
 	Eigen::Matrix3d L = R_.llt().matrixL();
 	Eigen::Vector3d randVec = (Eigen::Vector3d::Random().array()+1)/2;
-	Measurement = w_r_true_ + C_WT_true_ * randXZVect; //+ L * randVec;
-	return Measurement;
+        Measurement = w_r_true_ + C_WT_true_ * randXZVect + L * randVec;
+        return Measurement;
 }
 
 void whiteBoardEstimator::EKF_initialisation()
