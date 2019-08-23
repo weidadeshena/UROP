@@ -12,7 +12,6 @@ sigma_q_r = 0.001
 sigma_angle = 0.001
 dt = 0.05
 
-np.random.seed(28)
 
 def plane_frame(C_WT,w_x,w_y,w_z):
   w_x_p = np.dot(C_WT,w_x)
@@ -46,7 +45,7 @@ x_p_true,y_p_true,z_p_true = plane_frame(C_WT_true,x_axis,y_axis,z_axis)
 P = np.diag(np.array([0.1,0.1,0.1,0.1,0.1]))
 x = np.transpose(x_true) + np.linalg.cholesky(P).dot(np.random.rand(5,1))
 
-print(x_true,x,C_WT_true)
+
 
 R = np.diag(np.array([sigma_r**2,sigma_r**2,sigma_r**2]))
 Q = dt*np.diag(np.array([sigma_q_r**2,sigma_q_r**2,sigma_q_r**2,sigma_angle**2,sigma_angle**2]))
@@ -64,25 +63,20 @@ def animate(i):
 	psi_est = x[4][0]
 	C_WT = board_rotation(phi_est,psi_est)
 	delta_r = r_tilde_w - x[0:3,:]
-	print("rw:",r_tilde_w)
 	H_phi = delta_r[2][0]*np.cos(phi_est)-delta_r[1][0]*np.cos(psi_est)*np.sin(phi_est)+delta_r[0][0]*np.sin(phi_est)*np.sin(psi_est)
 	H_psi = -np.cos(phi_est)*(delta_r[0][0]*np.cos(psi_est)-delta_r[1][0]*np.sin(psi_est))
 	H_r = np.array([[0,1,0]]).dot(np.transpose(C_WT))
 	# print(H_phi,H_psi,H_r)
-	H = np.array([np.append(H_r[0],[H_phi,H_psi])])
-	y = np.array([[0,1,0]]).dot(np.dot(np.transpose(C_WT),delta_r))
-	S = np.dot(np.dot(H,P),np.transpose(H))+sigma_r**2*(C_WT[1][0]**2+C_WT[1][1]**2+C_WT[1][2]**2)
-	K = np.dot(P,np.transpose(H))/S
+	H = np.array([np.append(H_r[0],[H_phi,H_psi])]) #(1,5)
+	y = np.array([[0,1,0]]).dot(np.dot(np.transpose(C_WT),delta_r)) #(1,1)
+	S = np.dot(np.dot(H,P),np.transpose(H))+sigma_r**2*(C_WT[1][0]**2+C_WT[1][1]**2+C_WT[1][2]**2) #(1,1)
+	K = np.dot(P,np.transpose(H))/S #(5,1)
 	delta_x = np.dot(K,y)
 	# print(H)
-	s = np.transpose(np.dot(C_WT,np.array([[0],[1],[0]])))*delta_x[0:3,:]
+	s = np.transpose(np.dot(C_WT,np.array([[0],[1],[0]])))*delta_x[0:3,:] #(3,3)
 	delta_x[0:3,:] = np.dot(np.dot(s,C_WT),np.array([[0],[1],[0]]))
 	x = x + delta_x
-	print(x)
 	P = P - np.dot(np.dot(K,H),P)
-	print(np.dot(np.dot(K,H),P))
-	# print(x)
-	# print(x_true)
 	w_r_p_est = np.transpose(x[0:3,:])
 	x_p_est,y_p_est,z_p_est = plane_frame(C_WT,x_axis,y_axis,z_axis)
 	X,Y,Z = zip(origin[0],origin[0],origin[0],w_r_true[0],w_r_true[0],w_r_true[0],w_r_p_est[0],w_r_p_est[0],w_r_p_est[0])
