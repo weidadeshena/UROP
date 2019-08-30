@@ -24,10 +24,10 @@ text_size = 1
 z_distance = 0.2
 
 
-amax = 50
-vmax = 20
-vmax_z = 10
-amax_z = 50
+amax = 500
+vmax = 200
+vmax_z = 100
+amax_z = 500
 
 
 def find_angle(point1,point2,point3):
@@ -417,9 +417,13 @@ while True:
 vel3d = np.asarray(vel3d)
 acc3d = np.asarray(acc3d)
 timestamps = np.asarray(timestamps).reshape(len(timestamps),1)
-timestamps = timestamps*10**9
-trajectory = np.concatenate((np.concatenate((np.concatenate((path_3d,vel3d),axis=1),acc3d),axis=1),timestamps),axis=1)
-np.savetxt("trajectory.txt",trajectory,fmt='%f,%f,%f,%f,%f,%f,%f,%f,%f,%f')
+timestamps = timestamps
+#trajectory = np.concatenate((np.concatenate((np.concatenate((path_3d,vel3d),axis=1),acc3d),axis=1),timestamps),axis=1)
+#np.savetxt("trajectory.txt",trajectory,fmt='%f,%f,%f,%f,%f,%f,%f,%f,%f,%f')
+trajectory = np.concatenate((np.concatenate((timestamps,path_3d),axis=1),np.zeros((len(timestamps),1))),axis=1)
+np.savetxt("trajectory.txt",trajectory,fmt='%f %f %f %f %f')
+
+
 
 # plot_colourline_3d(path_3d[:,0],path_3d[:,1],path_3d[:,2],abs_v(vel3d[1:]))
 plt.show()
