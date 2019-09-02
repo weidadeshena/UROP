@@ -18,3 +18,6 @@ white_board_estimator.h&.cpp: White board EKF in cpp, currently generating rando
 trajectory_publisher.cpp: publish the trajectory in Dimos’ message type
 
 trajectory_listener.cpp: subscribe to the trajectory in Dimos’ message type
+
+
+Thanks so much for letting me work with you guys. It has been a really fun experience! I learned a lot and I really enjoyed it. Stefan is a great supervisor and I wish I’m as smart as him xD. If you need help with the thing I did(well I didn’t put much comment in the code…. my fault) or anything else feel free to contact me via facebook/slack/email (qy916@ic.ac.uk)
