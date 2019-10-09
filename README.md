@@ -1,5 +1,5 @@
-UROP WHAT I DID                                                                                                      -Cheryl
-Two GitHub repos coz I’m dumb and didn’t really use GitHub … until this UROP
+UROP WHAT I DID                                                                                                      
+Two GitHub repos coz I’m dumb and didn’t really use GitHub …
 
 repo 1:
 UROP/script:
